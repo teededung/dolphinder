@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { loadDevelopers, type Dev } from "../data/loadDevs";
+import ProfileAvatar from "@/components/shared/ProfileAvatar";
 
 const DeveloperShowcase: React.FC = () => {
   const [developers, setDevelopers] = useState<Dev[]>([]);
@@ -85,17 +86,12 @@ const DeveloperShowcase: React.FC = () => {
           >
             {/* Avatar */}
             <div className="relative mb-3">
-              <img
-                src={dev.avatar || `https://github.com/${dev.username}.png`}
-                alt={dev.name}
-                className="h-12 w-12 rounded-full border-2 border-white/20 object-cover transition-all duration-300 group-hover:border-blue-400/50 md:h-16 md:w-16"
-                loading="lazy"
-                onError={e => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://github.com/${dev.username}.png`;
-                }}
+              <ProfileAvatar
+                src={dev.avatar}
+                name={dev.name}
+                username={dev.username}
+                className="h-12 w-12 md:h-16 md:w-16"
               />
-              {/* Online indicator */}
               <div className="absolute -right-1 -bottom-1 h-4 w-4 animate-pulse rounded-full border-2 border-white/20 bg-green-400"></div>
             </div>
 

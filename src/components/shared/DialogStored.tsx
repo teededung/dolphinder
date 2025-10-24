@@ -11,7 +11,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 const DialogStored = () => {
   const { isOpen, close, content } = useModalStore();
   return (
-    <Dialog open={isOpen} onOpenChange={close}>
+    <Dialog open={isOpen} onOpenChange={open => { if (!open) close(); }}>
       <DialogContent showCloseButton={false}>
         <VisuallyHidden>
           <DialogHeader>

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { loadDevelopers, type Dev } from "../data/loadDevs";
+import { useModalStore } from "../store/useModalStore";
+import DeveloperModalCard from "./DeveloperModalCard";
 
 type Bubble = {
   id: string;
@@ -291,6 +293,7 @@ const CanvasBubbles: React.FC = () => {
         active++;
         fetchGithubActivity(ghUser)
           .then(score => {
+            console.log("fetched activity", ghUser, score);
             setCachedActivity(ghUser, score);
             b.score = score;
             b.w = 0.9 + score * 0.9;
@@ -511,9 +514,11 @@ const CanvasBubbles: React.FC = () => {
     if (found) {
       setHoveredId(found.id);
       setTooltip({ x, y: y - (found.r + 16), dev: found.dev });
+      canvas.style.cursor = "pointer";
     } else {
       setHoveredId(null);
       setTooltip(null);
+      canvas.style.cursor = "default";
     }
   };
 
@@ -537,7 +542,8 @@ const CanvasBubbles: React.FC = () => {
       const dy = y - b.y;
       if (dx * dx + dy * dy <= b.r * b.r) {
         clickedOnBubble = true;
-        window.open(`/${b.dev.username}`, "_blank");
+        const { open } = useModalStore.getState();
+        open({ title: b.dev.name, content: <DeveloperModalCard dev={b.dev} /> });
         break;
       }
     }
@@ -576,7 +582,8 @@ const CanvasBubbles: React.FC = () => {
       const dy = y - b.y;
       if (dx * dx + dy * dy <= b.r * b.r) {
         tappedOnBubble = true;
-        window.open(`/${b.dev.username}`, "_blank");
+        const { open } = useModalStore.getState();
+        open({ title: b.dev.name, content: <DeveloperModalCard dev={b.dev} /> });
         break;
       }
     }

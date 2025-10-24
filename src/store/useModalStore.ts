@@ -21,7 +21,12 @@ export const useModalStore = create<ModalState>(set => ({
             title: params?.title,
             content: params?.content,
         }),
-    close: () => set({ isOpen: false, title: undefined, content: undefined }),
+    close: () => {
+        // Close immediately but keep content during the exit animation
+        set({ isOpen: false, title: undefined });
+        // Delay content clearing to avoid flicker while dialog animates out
+        setTimeout(() => set({ content: undefined }), 220);
+    },
     setContent: content => set({ content }),
 }));
 

@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.4.0",
-    "@astrojs/svelte": "^7.2.0",
     "@lucide/astro": "^0.544.0",
     "@mysten/dapp-kit": "^0.18.0",
     "@mysten/sui": "^1.43.1",
@@ -35,7 +34,6 @@
     "lucide-react": "^0.544.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "svelte": "^5.41.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.15",
     "three": "^0.180.0",

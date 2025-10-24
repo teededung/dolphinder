@@ -1,7 +1,7 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
 import Silk from "../components/react-bits/Silk";
-import DeveloperBubbles from "../components/DeveloperBubbles";
+import CanvasBubbles from "../components/CanvasBubbles";
 ---
 
 <MainLayout title="Dolphinder - Developer Directory">
@@ -18,9 +18,9 @@ import DeveloperBubbles from "../components/DeveloperBubbles";
       />
     </div>
     
-    <!-- Developer Bubbles -->
+    <!-- Developer Bubbles (Canvas) -->
     <div class="absolute inset-0">
-      <DeveloperBubbles client:load />
+      <CanvasBubbles client:load />
     </div>
     
     <!-- Main Content -->

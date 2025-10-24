@@ -1,4 +1,3 @@
-import React from "react";
 import { type Dev } from "../data/loadDevs";
 import ProfileAvatar from "./shared/ProfileAvatar";
 import { Github, Linkedin, Globe, ExternalLink } from "lucide-react";

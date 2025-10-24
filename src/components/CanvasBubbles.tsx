@@ -29,7 +29,7 @@ const CLICK_PUSH_STRENGTH = 6; // user-tunable push strength
 // Increase/Decrease to change effect area
 const CLICK_PUSH_RADIUS = 600; // user-tunable influence radius in px
 // Ripple visuals
-const RIPPLE_FADE_MS = 900; // user-tunable ripple duration
+const RIPPLE_FADE_MS = 1200; // user-tunable ripple duration
 const RIPPLE_MAX_RADIUS = 400; // user-tunable ripple max radius (px)
 const RIPPLE_STROKE_WIDTH = 3; // user-tunable ripple stroke width (px)
 

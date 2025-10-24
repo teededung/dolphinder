@@ -3,6 +3,7 @@ import { loadDevelopers } from "../../data/loadDevs";
 import { Github, Linkedin, Globe, Copy } from "@lucide/astro";
 import MainLayout from "../../components/MainLayout.astro";
 import ProfileAvatar from "../../components/shared/ProfileAvatar";
+import OnchainProfile from "../../components/onchain/OnchainProfile.tsx";
 
 export async function getStaticPaths() {
   const developers = await loadDevelopers();
@@ -69,6 +70,11 @@ const { dev } = Astro.props;
                 <span>Website</span>
               </a>
             )}
+          </div>
+
+          <!-- On-chain profile overlay (Walrus JSON) -->
+          <div class="mt-8">
+            <OnchainProfile client:only="react" username={dev.username} />
           </div>
 
           <!-- Wallet Address (if available) -->

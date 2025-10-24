@@ -8,6 +8,7 @@ export const Button = React.forwardRef<
     onClick?: () => void;
     className?: string;
     type?: "button" | "submit" | "reset";
+    disabled?: boolean;
   }
 >(({ children, onClick, className, type = "button", ...props }, ref) => {
   return (

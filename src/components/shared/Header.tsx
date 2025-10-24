@@ -52,8 +52,7 @@ const Header = () => {
 
           {/* Desktop Connect Button */}
           <div className="hidden md:block">
-            {/* <ConnectBtn /> */}
-            <Button>Join</Button>
+            <ConnectBtn />
           </div>
 
           {/* Mobile Menu Button */}
@@ -98,9 +97,7 @@ const Header = () => {
               </a>
             ))}
             <div className="border-t border-white/10 pt-4">
-              {/* <ConnectBtn /> */}
-
-              <Button>Join</Button>
+              <ConnectBtn />
             </div>
           </nav>
         </div>

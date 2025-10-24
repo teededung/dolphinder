@@ -16,6 +16,7 @@
   "dependencies": {
     "@astrojs/react": "^4.4.0",
     "@lucide/astro": "^0.544.0",
+    "@mysten/bcs": "^1.9.1",
     "@mysten/dapp-kit": "^0.18.0",
     "@mysten/sui": "^1.43.1",
     "@radix-ui/react-avatar": "^1.1.10",

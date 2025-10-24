@@ -1,6 +1,5 @@
 import { useState } from "react";
 import ConnectBtn from "../common/ConnectBtn";
-import { Button } from "./Button";
 
 const navItems = [
   {
@@ -30,11 +29,12 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 right-0 left-0 z-20 border-b border-white/10 bg-black/30 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-2">
         {/* Desktop Header */}
         <div className="flex items-center justify-between">
-          <a className="text-2xl font-bold" href="/">
-            Dolphinder
+          <a className="text-2xl font-bold flex items-center gap-2" href="/">
+            <img src="/dolphinder-logo.png" alt="Dolphinder" className="h-12 w-auto" />
+            <span className="text-xl font-bold">Dolphinder</span>
           </a>
 
           {/* Desktop Navigation */}

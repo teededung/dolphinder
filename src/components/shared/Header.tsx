@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConnectBtn from "../common/ConnectBtn";
+import { Button } from "../ui/button";
 
 const navItems = [
   {
@@ -56,8 +57,10 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="flex h-6 w-6 flex-col items-center justify-center space-y-1 md:hidden"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-6 w-6 flex-col space-y-1 md:hidden"
             onClick={toggleMobileMenu}
             aria-label="Toggle mobile menu"
           >
@@ -76,7 +79,7 @@ const Header = () => {
                 isMobileMenuOpen ? "-translate-y-2 -rotate-45" : ""
               }`}
             ></span>
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Navigation Menu */}

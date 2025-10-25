@@ -1,6 +1,7 @@
 import { type Dev } from "../data/loadDevs";
 import ProfileAvatar from "./shared/ProfileAvatar";
 import { Github, Linkedin, Globe, ExternalLink } from "lucide-react";
+import { Button } from "./ui/button";
 
 type Props = {
   dev: Dev;
@@ -29,36 +30,42 @@ export default function DeveloperModalCard({ dev }: Props) {
         <p className="max-w-md text-center text-sm text-white/80">{dev.bio}</p>
       )}
       <div className="mt-2 flex items-center gap-2">
-        <button
-          className="cursor-pointer rounded-md bg-white/10 px-3 py-1 text-sm font-medium hover:bg-white/20"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="bg-white/10 hover:bg-white/20"
           onClick={() => openNew(dev.github)}
         >
-          <span className="flex items-center gap-2"><Github className="h-4 w-4" /> GitHub</span>
-        </button>
+          <Github /> GitHub
+        </Button>
         {dev.linkedin && (
-          <button
-            className="cursor-pointer rounded-md bg-white/10 px-3 py-1 text-sm font-medium hover:bg-white/20"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/10 hover:bg-white/20"
             onClick={() => openNew(dev.linkedin)}
           >
-            <span className="flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</span>
-          </button>
+            <Linkedin /> LinkedIn
+          </Button>
         )}
         {dev.website && (
-          <button
-            className="cursor-pointer rounded-md bg-white/10 px-3 py-1 text-sm font-medium hover:bg-white/20"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/10 hover:bg-white/20"
             onClick={() => openNew(dev.website)}
           >
-            <span className="flex items-center gap-2"><Globe className="h-4 w-4" /> Website</span>
-          </button>
+            <Globe /> Website
+          </Button>
         )}
       </div>
       <div className="mt-1 flex w-full justify-center">
-        <button
-          className="cursor-pointer rounded-md bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-1 text-sm font-semibold hover:from-purple-600 hover:to-blue-600"
+        <Button
+          className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
           onClick={() => openNew(`/${dev.username}`)}
         >
-          <span className="flex items-center gap-2"><ExternalLink className="h-4 w-4" /> View profile</span>
-        </button>
+          <ExternalLink /> View profile
+        </Button>
       </div>
     </div>
   );

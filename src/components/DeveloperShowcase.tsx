@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { loadDevelopers, type Dev } from "../data/loadDevs";
 import ProfileAvatar from "@/components/shared/ProfileAvatar";
+import { Button } from "./ui/button";
 
 const DeveloperShowcase: React.FC = () => {
   const [developers, setDevelopers] = useState<Dev[]>([]);
@@ -112,9 +113,10 @@ const DeveloperShowcase: React.FC = () => {
       <div className="mb-8 flex justify-center space-x-2">
         {Array.from({ length: Math.ceil(developers.length / 6) }).map(
           (_, index) => (
-            <button
+            <Button
               key={index}
-              className={`h-2 w-2 rounded-full transition-all duration-300 ${
+              variant="ghost"
+              className={`h-2 w-2 rounded-full p-0 transition-all duration-300 ${
                 Math.floor(currentIndex / 6) === index
                   ? "w-6 bg-blue-400"
                   : "bg-white/30 hover:bg-white/50"
@@ -128,13 +130,13 @@ const DeveloperShowcase: React.FC = () => {
       {/* Call to Action */}
       <div className="text-center">
         <div className="inline-flex flex-col items-center gap-4 md:flex-row">
-          <a
-            href="/developers"
-            className="inline-flex transform items-center rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-3 font-semibold shadow-lg transition-all duration-300 hover:scale-105 hover:from-purple-600 hover:to-blue-600 hover:shadow-xl"
+          <Button
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl"
+            onClick={() => window.location.href = '/developers'}
           >
             View All Developers
             <svg
-              className="ml-2 h-4 w-4"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -146,14 +148,15 @@ const DeveloperShowcase: React.FC = () => {
                 d="M17 8l4 4m0 0l-4 4m4-4H3"
               />
             </svg>
-          </a>
-          <a
-            href="/community"
-            className="inline-flex transform items-center rounded-xl border border-white/20 bg-white/10 px-6 py-3 font-semibold backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20"
+          </Button>
+          <Button
+            variant="outline"
+            className="border-white/20 bg-white/10 backdrop-blur-sm hover:bg-white/20"
+            onClick={() => window.location.href = '/community'}
           >
             Join Community
             <svg
-              className="ml-2 h-4 w-4"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -165,7 +168,7 @@ const DeveloperShowcase: React.FC = () => {
                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"
               />
             </svg>
-          </a>
+          </Button>
         </div>
       </div>
     </div>

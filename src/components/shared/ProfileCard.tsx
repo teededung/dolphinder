@@ -1,4 +1,5 @@
 import { Github, Linkedin, Globe, Copy } from 'lucide-react';
+import { Button } from '../ui/button';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -77,37 +78,34 @@ export default function ProfileCard({
       {(github || linkedin || website) && (
         <div className="flex justify-center space-x-4 mb-8">
           {github && (
-            <a
-              href={github}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105"
+            <Button
+              variant="ghost"
+              className="bg-white/10 hover:bg-white/20 hover:scale-105"
+              onClick={() => window.open(github, '_blank')}
             >
               <Github className="w-5 h-5" />
-              <span>GitHub</span>
-            </a>
+              GitHub
+            </Button>
           )}
           {linkedin && (
-            <a
-              href={linkedin}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105"
+            <Button
+              variant="ghost"
+              className="bg-white/10 hover:bg-white/20 hover:scale-105"
+              onClick={() => window.open(linkedin, '_blank')}
             >
               <Linkedin className="w-5 h-5" />
-              <span>LinkedIn</span>
-            </a>
+              LinkedIn
+            </Button>
           )}
           {website && (
-            <a
-              href={website}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105"
+            <Button
+              variant="ghost"
+              className="bg-white/10 hover:bg-white/20 hover:scale-105"
+              onClick={() => window.open(website, '_blank')}
             >
               <Globe className="w-5 h-5" />
-              <span>Website</span>
-            </a>
+              Website
+            </Button>
           )}
         </div>
       )}
@@ -118,13 +116,15 @@ export default function ProfileCard({
           <h3 className="text-sm font-semibold text-white/80 mb-2">Wallet Address</h3>
           <div className="flex items-center justify-between bg-black/20 rounded-lg p-3">
             <code className="font-mono text-sm text-white/70 break-all">{walletAddress}</code>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="ml-3"
               onClick={() => navigator.clipboard.writeText(walletAddress)}
-              className="cursor-pointer ml-3 p-1 hover:bg-white/10 rounded transition-colors"
               title="Copy to clipboard"
             >
               <Copy className="h-4 w-4 text-white/60" />
-            </button>
+            </Button>
           </div>
         </div>
       )}

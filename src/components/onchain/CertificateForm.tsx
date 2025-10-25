@@ -1,5 +1,6 @@
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
 import { uploadJson } from '../../lib/walrus';
 import { getDevIdByUsername } from '../../lib/sui-views';
 import { buildRegisterTx, buildUpdateProfileTx } from '../../lib/sui-tx';
@@ -18,6 +19,24 @@ export function CertificateForm({ username }: { username: string }) {
   const [cert, setCert] = useState<Certificate>({ title: '' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setOwner(null);
+        const devId = await getDevIdByUsername(username);
+        if (!devId) return;
+        const client = new SuiClient({ url: getFullnodeUrl('testnet') });
+        const res = await client.getObject({ id: devId, options: { showContent: true } });
+        const fields: any = (res.data as any)?.content?.fields;
+        const ownerAddr: string | undefined = typeof fields?.owner === 'string' ? fields.owner : undefined;
+        if (ownerAddr) setOwner(ownerAddr);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [username]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +91,18 @@ export function CertificateForm({ username }: { username: string }) {
              onChange={(e) => setCert((p) => ({ ...p, url: e.target.value }))} />
       <input className="w-full rounded bg-white/10 px-3 py-2" placeholder="Credential ID" value={cert.credentialId || ''}
              onChange={(e) => setCert((p) => ({ ...p, credentialId: e.target.value }))} />
-      <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Add Certificate On-chain'}</Button>
+      <Button
+        type="submit"
+        disabled={
+          loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
+        }
+      >
+        {loading ? 'Saving...' : 'Add Certificate On-chain'}
+      </Button>
+      {!account && (<div className="text-sm opacity-80">Please connect your wallet to add certificate.</div>)}
+      {account && owner !== null && account.address.toLowerCase() !== owner.toLowerCase() && (
+        <div className="text-sm opacity-80">Connected wallet is not the owner of this profile.</div>
+      )}
       {msg && <div className="text-sm opacity-80">{msg}</div>}
     </form>
   );

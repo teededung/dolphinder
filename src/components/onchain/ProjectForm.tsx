@@ -1,5 +1,6 @@
 import { useCurrentAccount } from '@mysten/dapp-kit';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
 import { uploadJson, fetchJson } from '../../lib/walrus';
 import { getDevIdByUsername } from '../../lib/sui-views';
 import { buildRegisterTx, buildUpdateProfileTx } from '../../lib/sui-tx';
@@ -18,6 +19,24 @@ export function ProjectForm({ username }: { username: string }) {
   const [project, setProject] = useState<Project>({ name: '' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setOwner(null);
+        const devId = await getDevIdByUsername(username);
+        if (!devId) return;
+        const client = new SuiClient({ url: getFullnodeUrl('testnet') });
+        const res = await client.getObject({ id: devId, options: { showContent: true } });
+        const fields: any = (res.data as any)?.content?.fields;
+        const ownerAddr: string | undefined = typeof fields?.owner === 'string' ? fields.owner : undefined;
+        if (ownerAddr) setOwner(ownerAddr);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [username]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,7 +93,18 @@ export function ProjectForm({ username }: { username: string }) {
              onChange={(e) => setProject((p) => ({ ...p, demoUrl: e.target.value }))} />
       <textarea className="w-full rounded bg-white/10 px-3 py-2" placeholder="Description" value={project.description || ''}
                 onChange={(e) => setProject((p) => ({ ...p, description: e.target.value }))} />
-      <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Add Project On-chain'}</Button>
+      <Button
+        type="submit"
+        disabled={
+          loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
+        }
+      >
+        {loading ? 'Saving...' : 'Add Project On-chain'}
+      </Button>
+      {!account && (<div className="text-sm opacity-80">Please connect your wallet to add project.</div>)}
+      {account && owner !== null && account.address.toLowerCase() !== owner.toLowerCase() && (
+        <div className="text-sm opacity-80">Connected wallet is not the owner of this profile.</div>
+      )}
       {msg && <div className="text-sm opacity-80">{msg}</div>}
     </form>
   );

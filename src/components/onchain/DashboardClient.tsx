@@ -1,4 +1,3 @@
-import { GlobalSuiProvider } from '../providers/GlobalSuiProvider';
 import { OnchainProfileForm } from './OnchainProfileForm';
 import { ProjectForm } from './ProjectForm';
 import { CertificateForm } from './CertificateForm';
@@ -6,15 +5,8 @@ import { useCurrentAccount } from '@mysten/dapp-kit';
 import ConnectBtn from '../common/ConnectBtn';
 
 export default function DashboardClient({ username }: { username: string }) {
-  return (
-    <GlobalSuiProvider>
-      <DashboardInner username={username} />
-    </GlobalSuiProvider>
-  );
-}
-
-function DashboardInner({ username }: { username: string }) {
   const account = useCurrentAccount();
+  
   return (
     <>
       {!account && (

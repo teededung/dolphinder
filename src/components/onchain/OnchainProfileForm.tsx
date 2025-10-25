@@ -1,5 +1,7 @@
 import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { useState, useEffect } from 'react';
+import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { fromBase64 } from '@mysten/bcs';
 import { uploadJson, fetchJson } from '../../lib/walrus';
 import { getDevIdByUsername } from '../../lib/sui-views';
 import { makeRegisterTx, makeUpdateProfileTx } from '../../lib/sui-tx';
@@ -20,12 +22,12 @@ type ProfileData = {
 
 const EMPTY: ProfileData = {
   profile: {
-    name: 'Tuan Anh',
-    github: 'https://github.com/teededung',
-    linkedin: 'https://www.linkedin.com/in/tuan-anh-nguyen-990140157/',
-    website: 'Website',
-    avatar: 'https://avatars.githubusercontent.com/u/9781158?v=4',
-    bio: 'test bio',
+    name: '',
+    github: '',
+    linkedin: '',
+    website: '',
+    avatar: '',
+    bio: '',
   },
   projects: [],
   certificates: [],
@@ -37,18 +39,61 @@ export function OnchainProfileForm({ username }: { username: string }) {
   const [initialBlobId, setInitialBlobId] = useState<string | null>(null);
   const [data, setData] = useState<ProfileData>(EMPTY);
   const [message, setMessage] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(null);
   const { mutateAsync: signAndExecute } = (useSignAndExecuteTransaction as any)();
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
+        setMessage(null);
+        setOwner(null);
+        setInitialBlobId(null);
         const devId = await getDevIdByUsername(username);
-        if (!devId) return;
-        // fetch current dev object to read walrus_blob_id
-        // We can rely on fetchJson once blob id known via page/view layer; for simplicity, leave it to parent or next step.
+        if (!devId) {
+          setData(EMPTY);
+          return;
+        }
+        const client = new SuiClient({ url: getFullnodeUrl('testnet') });
+        const res = await client.getObject({ id: devId, options: { showContent: true } });
+        const fields: any = (res.data as any)?.content?.fields;
+        const ownerAddr: string | undefined = typeof fields?.owner === 'string' ? fields.owner : undefined;
+        if (ownerAddr) setOwner(ownerAddr);
+        let blobId: string | undefined;
+        const raw = fields?.walrus_blob_id;
+        if (typeof raw === 'string') {
+          try {
+            const bytes = raw.startsWith('0x')
+              ? new Uint8Array(raw.slice(2).match(/.{1,2}/g)?.map((h: string) => parseInt(h, 16)) || [])
+              : fromBase64(raw);
+            blobId = new TextDecoder().decode(bytes);
+          } catch {
+            blobId = raw;
+          }
+        } else if (Array.isArray(raw)) {
+          blobId = new TextDecoder().decode(new Uint8Array(raw));
+        }
+        if (!blobId) {
+          setData(EMPTY);
+          return;
+        }
+        setInitialBlobId(blobId);
+        const json = await fetchJson<ProfileData>(blobId);
+        const merged: ProfileData = {
+          profile: {
+            name: json?.profile?.name || '',
+            github: json?.profile?.github || '',
+            linkedin: json?.profile?.linkedin || '',
+            website: json?.profile?.website || '',
+            avatar: json?.profile?.avatar || '',
+            bio: json?.profile?.bio || '',
+          },
+          projects: Array.isArray(json?.projects) ? json.projects : [],
+          certificates: Array.isArray(json?.certificates) ? json.certificates : [],
+        };
+        setData(merged);
       } catch (e) {
-        // ignore
+        // ignore prefill errors
       } finally {
         setLoading(false);
       }
@@ -128,7 +173,20 @@ export function OnchainProfileForm({ username }: { username: string }) {
         value={data.profile.bio || ''}
         onChange={(e) => setData((d) => ({ ...d, profile: { ...d.profile, bio: e.target.value } }))}
       />
-      <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Profile On-chain'}</Button>
+      <Button
+        type="submit"
+        disabled={
+          loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
+        }
+      >
+        {loading ? 'Saving...' : 'Save Profile On-chain'}
+      </Button>
+      {!account && (
+        <div className="text-sm opacity-80">Please connect your wallet to save.</div>
+      )}
+      {account && owner !== null && account.address.toLowerCase() !== owner.toLowerCase() && (
+        <div className="text-sm opacity-80">Connected wallet is not the owner of this profile.</div>
+      )}
       {message && <div className="text-sm opacity-80">{message}</div>}
       {initialBlobId && <div className="text-xs opacity-60">Current blobId: {initialBlobId}</div>}
     </form>

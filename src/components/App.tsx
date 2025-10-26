@@ -3,7 +3,7 @@ import Header from "./shared/Header";
 import DialogStored from "./shared/DialogStored";
 
 interface AppProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 /**

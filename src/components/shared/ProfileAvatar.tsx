@@ -2,7 +2,7 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-type ProfileAvatarProps = {
+export type ProfileAvatarProps = {
   src?: string | null;
   name: string;
   username?: string;

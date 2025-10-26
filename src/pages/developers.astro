@@ -2,7 +2,7 @@
 import MainLayout from "../components/MainLayout.astro";
 import { loadDevelopers } from "../data/loadDevs";
 import { Github, Linkedin, Globe, ExternalLink } from "@lucide/astro";
-import ProfileAvatar from "../components/shared/ProfileAvatar";
+import { ProfileAvatar } from "../components/shared/ProfileAvatar";
 
 const developers = await loadDevelopers();
 ---
@@ -33,12 +33,12 @@ const developers = await loadDevelopers();
             <!-- Avatar -->
             <div class="flex justify-center mb-4">
               <ProfileAvatar
-                client:load
                 src={dev.avatar}
                 name={dev.name}
                 username={dev.username}
                 className="rounded-full border-3 border-white/20 group-hover:border-blue-400/50 transition-all duration-300"
                 size={80}
+                client:load
               />
             </div>
 

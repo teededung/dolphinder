@@ -34,13 +34,12 @@ const { dev } = Astro.props;
               linkedin={dev.linkedin}
               website={dev.website}
               walletAddress={dev.slushWallet}
-              {...({} as any)}
             />
           </div>
 
           <!-- On-chain profile overlay (Walrus JSON) -->
           <div id="onchain-profile">
-            <OnchainProfile client:only="react" username={dev.username} {...({} as any)} />
+            <OnchainProfile client:only="react" username={dev.username} />
           </div>
         </div>
       </div>

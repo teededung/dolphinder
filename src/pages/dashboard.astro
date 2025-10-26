@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../components/MainLayout.astro';
-import DashboardShell from '../components/onchain/DashboardShell.tsx';
+import DashboardShell from '../components/onchain/DashboardShell';
 
 export const prerender = false;
 
@@ -8,7 +8,7 @@ const username = Astro.url.searchParams.get('username') ?? '';
 ---
 <MainLayout title="Dashboard - On-chain Profile">
 {username ? (
-  <DashboardShell client:only="react" username={username} />
+  <DashboardShell username={username} />
 ) : (
 
   <div class="min-h-screen pt-16">

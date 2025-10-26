@@ -1,8 +1,8 @@
 ---
 import { loadDevelopers } from "../../data/loadDevs";
 import MainLayout from "../../components/MainLayout.astro";
-import ProfileCard from "../../components/shared/ProfileCard.tsx";
-import OnchainProfile from "../../components/onchain/OnchainProfile.tsx";
+import ProfileCard from "../../components/shared/ProfileCard";
+import OnchainProfile from "../../components/onchain/OnchainProfile";
 
 export async function getStaticPaths() {
   const developers = await loadDevelopers();
@@ -34,12 +34,13 @@ const { dev } = Astro.props;
               linkedin={dev.linkedin}
               website={dev.website}
               walletAddress={dev.slushWallet}
+              {...({} as any)}
             />
           </div>
 
           <!-- On-chain profile overlay (Walrus JSON) -->
           <div id="onchain-profile">
-            <OnchainProfile client:only="react" username={dev.username} />
+            <OnchainProfile client:only="react" username={dev.username} {...({} as any)} />
           </div>
         </div>
       </div>

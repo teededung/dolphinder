@@ -20,22 +20,13 @@ const REQUIRED_ENVS = [
 ];
 
 function readEnv(name: string): string | undefined {
-  // Prefer process.env; fall back to static property access on import.meta.env
-  // @ts-ignore
-  const p = typeof process !== 'undefined' ? (process as any).env : undefined;
-  switch (name) {
-    case 'SPONSOR_PRIVATE_KEY':
-      // @ts-ignore
-      return (p?.SPONSOR_PRIVATE_KEY as string | undefined) ?? ((import.meta as any).env?.SPONSOR_PRIVATE_KEY as string | undefined);
-    case 'SPONSOR_ADDRESS':
-      // @ts-ignore
-      return (p?.SPONSOR_ADDRESS as string | undefined) ?? ((import.meta as any).env?.SPONSOR_ADDRESS as string | undefined);
-    case 'SUI_RPC_URL':
-      // @ts-ignore
-      return (p?.SUI_RPC_URL as string | undefined) ?? ((import.meta as any).env?.SUI_RPC_URL as string | undefined);
-    default:
-      return p?.[name] as string | undefined;
+  if (typeof process !== 'undefined' && (process as any).env && (process as any).env[name] !== undefined) {
+    return (process as any).env[name] as string | undefined;
   }
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[name] !== undefined) {
+    return (import.meta as any).env[name] as string | undefined;
+  }
+  return undefined;
 }
 
 function assertEnvs() {

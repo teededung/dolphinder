@@ -3,23 +3,18 @@ import { fromBase64 } from '@mysten/bcs';
 import { Transaction } from '@mysten/sui/transactions';
 
 function getEnv(name: string): string | undefined {
-  // @ts-ignore - import.meta.env injected by Vite/Astro
   if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[name] !== undefined) {
-    // @ts-ignore
-    return (import.meta as any).env[name];
+    return (import.meta as any).env[name] as string | undefined;
   }
-  // Node runtime (API routes)
-  // @ts-ignore
   if (typeof process !== 'undefined' && (process as any).env && (process as any).env[name] !== undefined) {
-    // @ts-ignore
-    return (process as any).env[name];
+    return (process as any).env[name] as string | undefined;
   }
   return undefined;
 }
 
 const RPC_URL = getEnv('SUI_RPC_URL') || getFullnodeUrl('testnet');
-const PACKAGE_ID = (import.meta as any).env?.PUBLIC_PACKAGE_ID ?? getEnv('PACKAGE_ID');
-const USERNAME_INDEX_ID = (import.meta as any).env?.PUBLIC_USERNAME_INDEX_ID ?? getEnv('USERNAME_INDEX_ID');
+const PACKAGE_ID = (import.meta as any).env.PUBLIC_PACKAGE_ID as string | undefined ?? getEnv('PACKAGE_ID');
+const USERNAME_INDEX_ID = (import.meta as any).env.PUBLIC_USERNAME_INDEX_ID as string | undefined ?? getEnv('USERNAME_INDEX_ID');
 
 const client = new SuiClient({ url: RPC_URL });
 

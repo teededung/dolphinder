@@ -3,12 +3,43 @@ import MainLayout from "../components/MainLayout.astro";
 import { loadDevelopers } from "../data/loadDevs";
 import { Github, Linkedin, Globe, ExternalLink } from "@lucide/astro";
 import { ProfileAvatar } from "../components/shared/ProfileAvatar";
+import { createSupabaseServerClient } from "../lib/supabase/serverClient";
+import { getVerifiedDevelopers } from "../lib/auth";
 
-const developers = await loadDevelopers();
+export const prerender = false;
+
+// Get developers from Supabase
+const supabase = createSupabaseServerClient(Astro.cookies as any);
+const dbDevelopers = await getVerifiedDevelopers(supabase);
+
+// Fallback to JSON developers
+const jsonDevelopers = await loadDevelopers();
+
+// Merge both sources, prioritizing Supabase data
+// Map database developers to match JSON structure
+const mappedDbDevelopers = dbDevelopers.map(dev => ({
+  name: dev.name,
+  username: dev.username,
+  avatar: dev.avatar || '',
+  bio: dev.bio || '',
+  github: dev.github || '',
+  linkedin: dev.linkedin || '',
+  telegram: dev.telegram || '',
+  website: '', // Not in DB yet
+  slushWallet: dev.slush_wallet || '',
+  entry: dev.entry || '',
+}));
+
+// Filter out JSON developers that are already in Supabase
+const dbUsernames = new Set(dbDevelopers.map(d => d.username));
+const uniqueJsonDevelopers = jsonDevelopers.filter(d => !dbUsernames.has(d.username));
+
+// Combine both sources
+const developers = [...mappedDbDevelopers, ...uniqueJsonDevelopers];
 ---
 
 <MainLayout title="Developers - Dolphinder">
-  <div class="min-h-screen  pt-16">
+  <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-12">

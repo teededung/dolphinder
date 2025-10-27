@@ -1,0 +1,227 @@
+---
+import MainLayout from "../../components/MainLayout.astro";
+import LogoutButton from "../../components/shared/LogoutButton";
+import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
+import {
+  getCurrentUser,
+  isAdmin,
+  getPendingDevelopers,
+  getVerifiedDevelopers,
+} from "../../lib/auth";
+
+export const prerender = false;
+
+// Check authentication
+const supabase = createSupabaseServerClient(Astro.cookies as any);
+const user = await getCurrentUser(supabase);
+
+if (!user) {
+  return Astro.redirect("/admin/login");
+}
+
+// Check if user is admin
+if (!isAdmin(user.email)) {
+  return new Response("Forbidden", { status: 403 });
+}
+
+// Fetch developers
+const pendingDevelopers = await getPendingDevelopers(supabase);
+const verifiedDevelopers = await getVerifiedDevelopers(supabase);
+---
+
+<MainLayout title="Admin Dashboard">
+  <div class="min-h-screen pt-20">
+    <div class="container mx-auto px-4 py-8">
+      <div class="mb-8 flex items-center justify-between">
+        <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+        <div class="flex items-center gap-4">
+          <span class="text-muted-foreground text-sm">
+            {user.email}
+          </span>
+          <LogoutButton client:load />
+        </div>
+      </div>
+
+      <div class="mb-8 grid gap-4 md:grid-cols-3">
+        <div class="bg-card rounded-lg border p-6">
+          <h3 class="text-muted-foreground text-sm font-medium">
+            Pending Review
+          </h3>
+          <p class="mt-2 text-3xl font-bold">{pendingDevelopers.length}</p>
+        </div>
+        <div class="bg-card rounded-lg border p-6">
+          <h3 class="text-muted-foreground text-sm font-medium">Verified</h3>
+          <p class="mt-2 text-3xl font-bold">{verifiedDevelopers.length}</p>
+        </div>
+        <div class="bg-card rounded-lg border p-6">
+          <h3 class="text-muted-foreground text-sm font-medium">Total</h3>
+          <p class="mt-2 text-3xl font-bold">
+            {pendingDevelopers.length + verifiedDevelopers.length}
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-8">
+        <!-- Pending Developers -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">Pending Verification</h2>
+          {
+            pendingDevelopers.length === 0 ? (
+              <p class="text-muted-foreground">
+                No developers pending verification.
+              </p>
+            ) : (
+              <div class="space-y-4">
+                {pendingDevelopers.map(dev => (
+                  <div class="bg-card rounded-lg border p-6">
+                    <div class="flex items-start justify-between">
+                      <div class="flex gap-4">
+                        {dev.avatar && (
+                          <img
+                            src={dev.avatar}
+                            alt={dev.name}
+                            class="h-16 w-16 rounded-full object-cover"
+                          />
+                        )}
+                        <div>
+                          <h3 class="text-lg font-semibold">{dev.name}</h3>
+                          <p class="text-muted-foreground text-sm">
+                            @{dev.username}
+                          </p>
+                          {dev.bio && <p class="mt-2 text-sm">{dev.bio}</p>}
+                          <div class="mt-2 flex gap-2">
+                            {dev.github && (
+                              <a
+                                href={dev.github}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-primary text-sm hover:underline"
+                              >
+                                GitHub
+                              </a>
+                            )}
+                            {dev.linkedin && (
+                              <a
+                                href={dev.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-primary text-sm hover:underline"
+                              >
+                                LinkedIn
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          data-action="approve"
+                          data-id={dev.id}
+                          class="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          data-action="reject"
+                          data-id={dev.id}
+                          class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+        </section>
+
+        <!-- Verified Developers -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">Verified Developers</h2>
+          <div class="bg-card rounded-lg border p-6">
+            <div class="space-y-2">
+              {
+                verifiedDevelopers.map(dev => (
+                  <div class="flex items-center justify-between border-b py-2 last:border-b-0">
+                    <div class="flex items-center gap-3">
+                      {dev.avatar && (
+                        <img
+                          src={dev.avatar}
+                          alt={dev.name}
+                          class="h-10 w-10 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <p class="font-medium">{dev.name}</p>
+                        <p class="text-muted-foreground text-sm">
+                          @{dev.username}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      data-action="revoke"
+                      data-id={dev.id}
+                      class="text-destructive text-sm hover:underline"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
+
+    const supabase = getSupabaseBrowserClient();
+
+    // Logout handler
+    document
+      .getElementById("logout-btn")
+      ?.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/admin/login";
+      });
+
+    // Approve/Reject/Revoke handlers
+    document.addEventListener("click", async e => {
+      const target = e.target as HTMLElement;
+      const action = target.getAttribute("data-action");
+      const developerId = target.getAttribute("data-id");
+
+      if (!action || !developerId) return;
+
+      const confirmed = confirm(
+        `Are you sure you want to ${action} this developer?`
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch("/api/admin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            developerId,
+            action,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update developer");
+        }
+
+        // Reload page to reflect changes
+        window.location.reload();
+      } catch (error: any) {
+        alert(error.message || "Failed to update developer");
+      }
+    });
+  </script>
+</MainLayout>

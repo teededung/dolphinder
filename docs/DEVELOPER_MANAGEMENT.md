@@ -2,7 +2,7 @@
 
 Hệ thống quản lý developer profiles đã được cải tiến để dễ scale và maintain hơn.
 
-## 📁 Cấu trúc mới
+## 📁 Cấu trúc
 
 ```
 src/data/
@@ -13,7 +13,7 @@ src/data/
 └── loadDevs.ts         # Utility functions để load developer data
 ```
 
-## ✨ Ưu điểm của hệ thống mới
+## ✨ Ưu điểm của hệ thống
 
 - 🎯 **Dễ quản lý**: Mỗi developer có 1 file riêng
 - 🔍 **Dễ tìm kiếm**: Tìm theo username ngay trong tên file
@@ -79,14 +79,14 @@ Mỗi developer profile phải có cấu trúc sau:
 
 ```typescript
 type Dev = {
-  name: string;           // Tên đầy đủ (bắt buộc)
-  username: string;       // Username unique (bắt buộc)
-  avatar?: string;        // URL/path to avatar
-  github: string;         // GitHub URL (bắt buộc)
-  linkedin?: string;      // LinkedIn URL
-  website?: string;       // Personal website
-  bio?: string;           // Mô tả ngắn
-  slushWallet?: string;   // Sui wallet address
+  name: string; // Tên đầy đủ (bắt buộc)
+  username: string; // Username unique (bắt buộc)
+  avatar?: string; // URL/path to avatar
+  github: string; // GitHub URL (bắt buộc)
+  linkedin?: string; // LinkedIn URL
+  website?: string; // Personal website
+  bio?: string; // Mô tả ngắn
+  slushWallet?: string; // Sui wallet address
 };
 ```
 
@@ -95,13 +95,13 @@ type Dev = {
 ### Programmatic Access
 
 ```typescript
-import { loadDevelopers, getDeveloperByUsername } from './src/data/loadDevs';
+import { loadDevelopers, getDeveloperByUsername } from "./src/data/loadDevs";
 
 // Load tất cả developers
 const allDevs = await loadDevelopers();
 
 // Load developer cụ thể
-const dev = await getDeveloperByUsername('hulk');
+const dev = await getDeveloperByUsername("hulk");
 ```
 
 ### Custom Validation
@@ -121,7 +121,7 @@ const DevSchema = z.object({
 Hệ thống JSON này dễ dàng migrate sang:
 
 1. **Database**: Import JSON vào MongoDB/PostgreSQL
-2. **Headless CMS**: Import vào Strapi/Contentful  
+2. **Headless CMS**: Import vào Strapi/Contentful
 3. **API**: Tạo REST/GraphQL API từ JSON data
 4. **Git-based CMS**: Dùng với NetlifyCMS/ForestryIO
 

@@ -13,41 +13,45 @@ const { username } = Astro.params;
 // Try to get from Supabase first
 const supabase = createSupabaseServerClient(Astro.cookies as any);
 const currentUser = await getCurrentUser(supabase);
-let developer = await getDeveloperByUsername(supabase, username || '');
+let developer = await getDeveloperByUsername(supabase, username || "");
 
 // Check if user can view this profile
+const isOwner =
+  developer && currentUser && currentUser.id === developer.user_id;
 if (developer) {
   // Profile exists in Supabase
-  const isOwner = currentUser && currentUser.id === developer.user_id;
   const isVerified = developer.is_verified;
 
   // Only show if verified OR if owner viewing their own profile
   if (!isVerified && !isOwner) {
-    return Astro.redirect('/developers');
+    return Astro.redirect("/developers");
   }
 }
+
+// Check if this is a welcome redirect
+const isWelcome = Astro.url.searchParams.get("welcome") === "true";
 
 // Fallback to JSON if not found in Supabase
 let dev: any;
 if (!developer) {
   const developers = await loadDevelopers();
   dev = developers.find(d => d.username === username);
-  
+
   if (!dev) {
-    return Astro.redirect('/developers');
+    return Astro.redirect("/developers");
   }
 } else {
   // Map database structure to component props
   dev = {
     name: developer.name,
     username: developer.username,
-    avatar: developer.avatar || '',
-    bio: developer.bio || '',
-    github: developer.github || '',
-    linkedin: developer.linkedin || '',
-    telegram: developer.telegram || '',
-    slushWallet: developer.slush_wallet || '',
-    entry: developer.entry || '',
+    avatar: developer.avatar || "",
+    bio: developer.bio || "",
+    github: developer.github || "",
+    linkedin: developer.linkedin || "",
+    telegram: developer.telegram || "",
+    slushWallet: developer.slush_wallet || "",
+    entry: developer.entry || "",
   };
 }
 ---
@@ -55,9 +59,65 @@ if (!developer) {
 <MainLayout title={`${dev.name} - Developer Profile`}>
   <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
+      <!-- Welcome Banner -->
+      {
+        isWelcome && isOwner && (
+          <div class="mx-auto mb-6 max-w-2xl rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
+            <h3 class="font-semibold">🎉 Welcome to Dolphinder!</h3>
+            <p class="mt-1 text-sm">
+              Your profile has been created successfully! Complete your profile
+              below to get verified by our team.
+            </p>
+          </div>
+        )
+      }
+
+      <!-- Pending Verification Banner -->
+      {
+        isOwner && developer && !developer.is_verified && !isWelcome && (
+          <div class="mx-auto mb-6 max-w-2xl rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
+            <h3 class="font-semibold">⏳ Pending Verification</h3>
+            <p class="mt-1 text-sm">
+              Your profile is awaiting admin approval. You can edit your
+              information below.
+            </p>
+          </div>
+        )
+      }
+
+      <!-- Edit Profile Button -->
+      {
+        isOwner && (
+          <div class="mx-auto mb-6 max-w-2xl text-right">
+            <a
+              href="/dashboard"
+              class="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                <path d="m15 5 4 4" />
+              </svg>
+              Edit Profile
+            </a>
+          </div>
+        )
+      }
+
       <!-- Profile Card -->
-      <div class="max-w-2xl mx-auto">
-        <div class="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-8 text-center">
+      <div class="mx-auto max-w-2xl">
+        <div
+          class="rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
+        >
           <div id="static-profile" style="display:none">
             <ProfileCard
               client:only="react"

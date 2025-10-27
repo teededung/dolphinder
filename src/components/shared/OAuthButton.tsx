@@ -2,7 +2,7 @@ import { useState } from "react";
 import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
 import { Button } from "./Button";
 
-export default function RegisterForm() {
+export default function OAuthButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -16,7 +16,8 @@ export default function RegisterForm() {
       const { data, error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/success`,
+          skipBrowserRedirect: false,
         },
       });
 
@@ -24,7 +25,8 @@ export default function RegisterForm() {
         throw signInError;
       }
 
-      // OAuth will redirect automatically
+      // OAuth will redirect to GitHub, then back to callback
+      // Browser will redirect automatically, no need to handle here
     } catch (err: any) {
       console.error("GitHub OAuth error:", err);
       setError(err.message || "Failed to connect with GitHub");
@@ -44,25 +46,6 @@ export default function RegisterForm() {
         </svg>
         {loading ? "Connecting..." : "Continue with GitHub"}
       </Button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-card px-2 text-muted-foreground">
-            Why GitHub?
-          </span>
-        </div>
-      </div>
-
-      <div className="rounded-md bg-muted p-4 text-sm">
-        <p className="text-muted-foreground">
-          We use GitHub to verify your identity and automatically populate your
-          profile with your public information. Your profile will be reviewed by
-          our team before being made public.
-        </p>
-      </div>
 
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">

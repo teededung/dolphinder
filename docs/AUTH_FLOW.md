@@ -29,9 +29,12 @@
 1. User visits /register
 2. Click "Continue with GitHub"
 3. OAuth redirect to GitHub
-4. GitHub callback → /api/auth/callback
-5. Create user account + developer profile
-6. Redirect to /dashboard?welcome=true
+4. GitHub callback → /auth/callback
+   - Get session from OAuth
+   - Check if profile exists
+   - Create developer profile if needed
+   - Sync session to server-side cookies via /api/auth/session-sync
+5. Redirect to /dashboard?welcome=true
 ```
 
 ### User Login Flow

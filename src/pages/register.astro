@@ -1,6 +1,6 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
-import RegisterForm from "../components/shared/RegisterForm";
+import OAuthButton from "../components/shared/OAuthButton";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser } from "../lib/auth";
 
@@ -27,7 +27,15 @@ if (user) {
             </p>
           </div>
 
-          <RegisterForm client:load />
+          <OAuthButton client:load />
+
+          <div class="bg-muted mt-6 rounded-md p-4 text-sm">
+            <p class="text-muted-foreground">
+              We use GitHub to verify your identity and automatically populate
+              your profile with your public information. Your profile will be
+              reviewed by our team before being made public.
+            </p>
+          </div>
 
           <div class="text-muted-foreground mt-6 text-center text-sm">
             Already have an account?

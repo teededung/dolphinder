@@ -1,7 +1,11 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
+import LogoutButton from "../components/shared/LogoutButton";
+import ProfileForm from "../components/shared/ProfileForm";
+import CopyButton from "../components/shared/CopyButton";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
+import { shortenAddress } from "../lib/utils";
 
 export const prerender = false;
 
@@ -22,6 +26,37 @@ if (!developer) {
 }
 
 const isWelcome = Astro.url.searchParams.get("welcome") === "true";
+
+// Format Telegram username to display
+function formatTelegramDisplay(telegram: string | null): string {
+  if (!telegram) return "";
+
+  // Remove @ symbol if present
+  const cleaned = telegram.replace(/^@/, "");
+
+  // If it's a full URL, extract username
+  const urlMatch = telegram.match(/t\.me\/(@?)(.+)/);
+  if (urlMatch) {
+    return `@${urlMatch[2]}`;
+  }
+
+  return `@${cleaned}`;
+}
+
+// Format Telegram link
+function formatTelegramLink(telegram: string | null): string {
+  if (!telegram) return "";
+
+  // If already a full URL, return as is (assuming it's valid)
+  if (telegram.startsWith("http")) {
+    return telegram;
+  }
+
+  // Remove @ symbol if present
+  const cleaned = telegram.replace(/^@/, "");
+
+  return `https://t.me/${cleaned}`;
+}
 ---
 
 <MainLayout title="Dashboard">
@@ -32,12 +67,7 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
           <h1 class="text-3xl font-bold">Dashboard</h1>
           <p class="text-muted-foreground mt-1">{user.email}</p>
         </div>
-        <button
-          id="logout-btn"
-          class="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-4 py-2 text-sm"
-        >
-          Logout
-        </button>
+        <LogoutButton client:load />
       </div>
 
       {
@@ -68,7 +98,15 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
         <!-- Profile Preview -->
         <div class="lg:col-span-1">
           <div class="bg-card rounded-lg border p-6">
-            <h2 class="mb-4 text-lg font-semibold">Profile Preview</h2>
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-lg font-semibold">Profile Preview</h2>
+              <a
+                href={`/${developer.username}`}
+                class="text-primary text-sm hover:underline"
+              >
+                View Profile
+              </a>
+            </div>
             <div class="space-y-4">
               {
                 developer.avatar && (
@@ -100,7 +138,7 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
               <div class="space-y-2 text-sm">
                 {
                   developer.github && (
-                    <div class="flex items-center gap-2">
+                    <div class="group relative flex items-center gap-2">
                       <span class="text-muted-foreground">GitHub:</span>
                       <a
                         href={developer.github}
@@ -109,12 +147,20 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
                       >
                         {developer.github.replace("https://github.com/", "@")}
                       </a>
+                      <div class="ml-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <CopyButton
+                          client:load
+                          originText={developer.github}
+                          variant="ghost"
+                          size="icon-sm"
+                        />
+                      </div>
                     </div>
                   )
                 }
                 {
                   developer.linkedin && (
-                    <div class="flex items-center gap-2">
+                    <div class="group relative flex items-center gap-2">
                       <span class="text-muted-foreground">LinkedIn:</span>
                       <a
                         href={developer.linkedin}
@@ -123,30 +169,54 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
                       >
                         Profile
                       </a>
+                      <div class="ml-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <CopyButton
+                          client:load
+                          originText={developer.linkedin}
+                          variant="ghost"
+                          size="icon-sm"
+                        />
+                      </div>
                     </div>
                   )
                 }
                 {
                   developer.telegram && (
-                    <div class="flex items-center gap-2">
+                    <div class="group relative flex items-center gap-2">
                       <span class="text-muted-foreground">Telegram:</span>
                       <a
-                        href={developer.telegram}
+                        href={formatTelegramLink(developer.telegram)}
                         target="_blank"
                         class="text-primary hover:underline"
                       >
-                        {developer.telegram}
+                        {formatTelegramDisplay(developer.telegram)}
                       </a>
+                      <div class="ml-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <CopyButton
+                          client:load
+                          originText={formatTelegramLink(developer.telegram)}
+                          variant="ghost"
+                          size="icon-sm"
+                        />
+                      </div>
                     </div>
                   )
                 }
                 {
                   developer.slush_wallet && (
-                    <div class="flex items-center gap-2">
+                    <div class="group relative flex items-center gap-2">
                       <span class="text-muted-foreground">Wallet:</span>
                       <code class="text-xs">
-                        {developer.slush_wallet.slice(0, 10)}...
+                        {shortenAddress(developer.slush_wallet)}
                       </code>
+                      <div class="ml-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <CopyButton
+                          client:load
+                          originText={developer.slush_wallet}
+                          variant="ghost"
+                          size="icon-sm"
+                        />
+                      </div>
                     </div>
                   )
                 }
@@ -159,207 +229,10 @@ const isWelcome = Astro.url.searchParams.get("welcome") === "true";
         <div class="lg:col-span-2">
           <div class="bg-card rounded-lg border p-6">
             <h2 class="mb-4 text-lg font-semibold">Edit Profile</h2>
-            <form id="profile-form" class="space-y-4">
-              <div>
-                <label for="name" class="mb-2 block text-sm font-medium">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={developer.name}
-                  required
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label for="bio" class="mb-2 block text-sm font-medium">
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  rows="3"
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                  >{developer.bio || ""}</textarea
-                >
-              </div>
-
-              <div>
-                <label for="entry" class="mb-2 block text-sm font-medium">
-                  Level/Role
-                </label>
-                <input
-                  type="text"
-                  id="entry"
-                  name="entry"
-                  value={developer.entry || ""}
-                  placeholder="e.g., Senior Developer, Newbie, etc."
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label for="github" class="mb-2 block text-sm font-medium">
-                  GitHub URL
-                </label>
-                <input
-                  type="url"
-                  id="github"
-                  name="github"
-                  value={developer.github || ""}
-                  placeholder="https://github.com/username"
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label for="linkedin" class="mb-2 block text-sm font-medium">
-                  LinkedIn URL
-                </label>
-                <input
-                  type="url"
-                  id="linkedin"
-                  name="linkedin"
-                  value={developer.linkedin || ""}
-                  placeholder="https://linkedin.com/in/username"
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label for="telegram" class="mb-2 block text-sm font-medium">
-                  Telegram
-                </label>
-                <input
-                  type="text"
-                  id="telegram"
-                  name="telegram"
-                  value={developer.telegram || ""}
-                  placeholder="https://t.me/username or @username"
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label
-                  for="slush_wallet"
-                  class="mb-2 block text-sm font-medium"
-                >
-                  Sui Wallet Address
-                </label>
-                <input
-                  type="text"
-                  id="slush_wallet"
-                  name="slush_wallet"
-                  value={developer.slush_wallet || ""}
-                  placeholder="0x..."
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label for="avatar" class="mb-2 block text-sm font-medium">
-                  Avatar
-                </label>
-                <input
-                  type="file"
-                  id="avatar"
-                  name="avatar"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
-                />
-                <p class="text-muted-foreground mt-1 text-xs">
-                  Upload a new avatar (max 5MB). Supported formats: JPG, PNG,
-                  GIF, WebP
-                </p>
-              </div>
-
-              <div
-                id="error-message"
-                class="hidden rounded-md bg-red-50 p-3 text-sm text-red-800"
-              >
-              </div>
-
-              <div
-                id="success-message"
-                class="hidden rounded-md bg-green-50 p-3 text-sm text-green-800"
-              >
-              </div>
-
-              <button
-                type="submit"
-                id="submit-btn"
-                class="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-md px-4 py-2 font-medium disabled:opacity-50"
-              >
-                Save Changes
-              </button>
-            </form>
+            <ProfileForm client:load developer={developer} />
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <script>
-    import { getSupabaseBrowserClient } from "../lib/supabase/browserClient";
-
-    const supabase = getSupabaseBrowserClient();
-    const form = document.getElementById("profile-form") as HTMLFormElement;
-    const errorDiv = document.getElementById("error-message") as HTMLDivElement;
-    const successDiv = document.getElementById(
-      "success-message"
-    ) as HTMLDivElement;
-    const submitBtn = document.getElementById(
-      "submit-btn"
-    ) as HTMLButtonElement;
-
-    // Logout handler
-    document
-      .getElementById("logout-btn")
-      ?.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        window.location.href = "/";
-      });
-
-    // Form submit handler
-    form?.addEventListener("submit", async e => {
-      e.preventDefault();
-
-      errorDiv.classList.add("hidden");
-      successDiv.classList.add("hidden");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Saving...";
-
-      try {
-        const formData = new FormData(form);
-
-        const response = await fetch("/api/profile/update", {
-          method: "POST",
-          body: formData,
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "Failed to update profile");
-        }
-
-        successDiv.textContent = "Profile updated successfully!";
-        successDiv.classList.remove("hidden");
-
-        // Reload page after 1 second to show updated profile
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } catch (error: any) {
-        errorDiv.textContent = error.message || "Failed to update profile";
-        errorDiv.classList.remove("hidden");
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Save Changes";
-      }
-    });
-  </script>
 </MainLayout>

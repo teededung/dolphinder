@@ -1,0 +1,209 @@
+---
+import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
+import { getCurrentUser, getDeveloperProfile } from "../../lib/auth";
+import { downloadAvatar, isExternalUrl } from "../../lib/avatar";
+
+export const prerender = false;
+
+// This page handles OAuth callback on the client-side
+const supabase = createSupabaseServerClient(Astro.cookies as any);
+const user = await getCurrentUser(supabase);
+
+// If we have a user, check if they need a profile
+if (user) {
+  const profile = await getDeveloperProfile(supabase, user.id);
+
+  if (profile) {
+    // Profile exists, go to dashboard
+    return Astro.redirect("/dashboard");
+  }
+
+  // Need to create profile - will be handled by client-side script below
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Completing Registration...</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: #000;
+        color: #fff;
+      }
+      .loader {
+        text-align: center;
+      }
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader">
+      <div class="spinner"></div>
+      <p>Completing your registration...</p>
+      <p id="status"></p>
+    </div>
+
+    <script>
+      import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
+
+      async function handleCallback() {
+        const statusEl = document.getElementById("status");
+
+        if (!statusEl) return;
+
+        try {
+          statusEl.textContent = "Checking authentication...";
+          const supabase = getSupabaseBrowserClient();
+
+          // Get session from URL hash
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+
+          if (sessionError || !session) {
+            throw new Error("Failed to get session");
+          }
+
+          const user = session.user;
+          statusEl.textContent = "Creating your profile...";
+
+          // Check if profile exists
+          const { data: existingProfile } = await supabase
+            .from("developers")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+
+          if (existingProfile) {
+            // Profile exists, redirect to dashboard
+            window.location.href = "/dashboard";
+            return;
+          }
+
+          // Create new developer profile from GitHub data
+          const metadata = user.user_metadata;
+          const username =
+            metadata.user_name ||
+            metadata.preferred_username ||
+            user.email?.split("@")[0] ||
+            "user";
+          const name = metadata.full_name || metadata.name || username;
+          const githubAvatarUrl = metadata.avatar_url;
+          const githubProfile = metadata.user_name
+            ? `https://github.com/${metadata.user_name}`
+            : null;
+
+          // Create profile
+          const { error: insertError } = await supabase
+            .from("developers")
+            .insert({
+              user_id: user.id,
+              username: username,
+              name: name,
+              avatar: githubAvatarUrl, // Use GitHub avatar URL directly for now
+              github: githubProfile,
+              bio: null,
+              linkedin: null,
+              telegram: null,
+              slush_wallet: null,
+              entry: null,
+              is_verified: false,
+            });
+
+          if (insertError) {
+            // If username exists, try with unique suffix
+            if (insertError.code === "23505") {
+              const uniqueUsername = `${username}-${Date.now().toString(36).slice(-4)}`;
+
+              const { error: retryError } = await supabase
+                .from("developers")
+                .insert({
+                  user_id: user.id,
+                  username: uniqueUsername,
+                  name: name,
+                  avatar: githubAvatarUrl,
+                  github: githubProfile,
+                  bio: null,
+                  linkedin: null,
+                  telegram: null,
+                  slush_wallet: null,
+                  entry: null,
+                  is_verified: false,
+                });
+
+              if (retryError) {
+                throw retryError;
+              }
+            } else {
+              throw insertError;
+            }
+          }
+
+          statusEl.textContent = "Finalizing registration...";
+
+          // Sync session to server-side cookies
+          const syncResponse = await fetch("/api/auth/session-sync", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            }),
+          });
+
+          const syncResult = await syncResponse.json();
+          console.log("Session sync result:", syncResult);
+
+          if (!syncResponse.ok) {
+            throw new Error(syncResult.error || "Failed to sync session");
+          }
+
+          statusEl.textContent = "Success! Redirecting...";
+
+          // Wait a moment for cookies to be set
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Redirect to server-side endpoint to complete registration
+          // This ensures session is properly synced
+          window.location.href = "/api/auth/complete-registration";
+        } catch (error: any) {
+          console.error("Callback error:", error);
+          statusEl.textContent = `Error: ${error?.message || "Unknown error"}`;
+
+          setTimeout(() => {
+            window.location.href = "/register?error=callback_failed";
+          }, 2000);
+        }
+      }
+
+      handleCallback();
+    </script>
+  </body>
+</html>

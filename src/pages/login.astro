@@ -1,6 +1,7 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
 import LoginForm from "../components/shared/LoginForm";
+import OAuthButton from "../components/shared/OAuthButton";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, isAdmin } from "../lib/auth";
 
@@ -31,6 +32,19 @@ if (user) {
             <p class="text-muted-foreground mt-2">
               Sign in to your Dolphinder account
             </p>
+          </div>
+
+          <OAuthButton client:load />
+
+          <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="bg-card text-muted-foreground px-2">
+                Or continue with email
+              </span>
+            </div>
           </div>
 
           <LoginForm client:load redirectTo="/dashboard" />

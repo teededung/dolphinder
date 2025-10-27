@@ -1,0 +1,92 @@
+---
+export const prerender = false;
+
+// This is a simple redirect page after OAuth
+// It just syncs the session and redirects to server-side handler
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Completing Registration...</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: #000;
+        color: #fff;
+      }
+      .loader {
+        text-align: center;
+      }
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader">
+      <div class="spinner"></div>
+      <p>Completing your registration...</p>
+    </div>
+
+    <script>
+      import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
+
+      async function completeRegistration() {
+        try {
+          const supabase = getSupabaseBrowserClient();
+
+          // Get session
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
+          if (error || !session) {
+            throw new Error("No session found");
+          }
+
+          // Sync session to server-side cookies
+          await fetch("/api/auth/session-sync", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            }),
+          });
+
+          // Redirect to server-side handler
+          window.location.href = "/api/auth/complete-registration";
+        } catch (error) {
+          console.error("Error:", error);
+          window.location.href = "/register?error=callback_failed";
+        }
+      }
+
+      completeRegistration();
+    </script>
+  </body>
+</html>

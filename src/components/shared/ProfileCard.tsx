@@ -1,5 +1,6 @@
-import { Github, Linkedin, Globe, Copy } from 'lucide-react';
+import { Github, Linkedin, Globe } from 'lucide-react';
 import { Button } from '../ui/button';
+import CopyButton from './CopyButton';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -114,17 +115,14 @@ export default function ProfileCard({
       {walletAddress && (
         <div className="bg-white/5 rounded-lg p-4 border border-white/10">
           <h3 className="text-sm font-semibold text-white/80 mb-2">Wallet Address</h3>
-          <div className="flex items-center justify-between bg-black/20 rounded-lg p-3">
+          <div className="flex items-center justify-between gap-3 bg-black/20 rounded-lg p-3">
             <code className="font-mono text-sm text-white/70 break-all">{walletAddress}</code>
-            <Button
+            <CopyButton
+              originText={walletAddress}
               variant="ghost"
               size="icon-sm"
-              className="ml-3"
-              onClick={() => navigator.clipboard.writeText(walletAddress)}
-              title="Copy to clipboard"
-            >
-              <Copy className="h-4 w-4 text-white/60" />
-            </Button>
+              className="shrink-0"
+            />
           </div>
         </div>
       )}

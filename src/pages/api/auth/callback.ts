@@ -7,9 +7,17 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ url, cookies, redirect }) => {
   const code = url.searchParams.get('code');
+  const error = url.searchParams.get('error');
+
+  if (error) {
+    console.error('OAuth error:', error);
+    return redirect(`/register?error=${error}`);
+  }
 
   if (!code) {
-    return redirect('/register?error=no_code');
+    console.log('[OAuth callback] No code parameter, redirecting to client-side handler');
+    // No code means implicit flow - redirect to client-side handler
+    return redirect('/auth/callback');
   }
 
   try {

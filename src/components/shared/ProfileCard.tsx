@@ -2,6 +2,7 @@ import { Github, Linkedin, Globe, Database, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
+import { ProfileAvatar } from './ProfileAvatar';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -61,15 +62,15 @@ export default function ProfileCard({
       </div>
 
       {/* Avatar */}
-      {avatar && (
-        <div className="flex justify-center">
-          <img
-            src={avatar}
-            alt={name || username || 'avatar'}
-            className="h-40 w-40 rounded-full object-cover border-4 border-white/20 shadow"
-          />
-        </div>
-      )}
+      <div className="flex justify-center">
+        <ProfileAvatar
+          src={avatar}
+          name={name || username || 'User'}
+          username={username}
+          className="border-4 border-white/20 shadow"
+          size={160}
+        />
+      </div>
 
       {/* Name + username */}
       {name && <div className="text-2xl font-semibold">{name}</div>}

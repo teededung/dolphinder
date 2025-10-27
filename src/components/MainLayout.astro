@@ -9,7 +9,7 @@ export interface Props {
 const { title = "Astro" } = Astro.props;
 ---
 
-<html lang="en">
+<html lang="en" transition:animate="fade">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -18,7 +18,7 @@ const { title = "Astro" } = Astro.props;
     <title>{title}</title>
   </head>
   <body class="dark">
-    <App client:only="react">
+    <App client:only="react" transition:persist>
       <slot />
     </App>
   </body>

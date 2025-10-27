@@ -32,6 +32,7 @@ const Header = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -58,6 +59,7 @@ const Header = () => {
         setAvatarUrl(null);
         setIsAdmin(false);
       }
+      setIsLoading(false);
     };
 
     checkAuth();
@@ -99,34 +101,40 @@ const Header = () => {
           </nav>
 
           {/* Desktop Auth Button */}
-          <div className="hidden items-center gap-3 md:flex">
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
-                  <Avatar className="size-9">
-                    {avatarUrl ? (
-                      <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
-                    ) : (
-                      <AvatarFallback>{avatarFallback}</AvatarFallback>
-                    )}
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard")}>Admin Dashboard</DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => (window.location.href = "/dashboard")}>Dashboard</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={handleLogout}>Logout</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="hidden items-center gap-3 md:flex w-[120px] justify-end">
+            {isLoading ? (
+              <div className="h-9 w-24 animate-pulse rounded-md bg-white/10" />
             ) : (
-                <Button
-                  onClick={() => window.location.href = "/register"}
-                  className="bg-white text-black hover:bg-white/90"
-                >
-                  Get Started
-                </Button>
+              <>
+                {isAuthenticated ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
+                      <Avatar className="size-9">
+                        {avatarUrl ? (
+                          <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
+                        ) : (
+                          <AvatarFallback>{avatarFallback}</AvatarFallback>
+                        )}
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard")}>Admin Dashboard</DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => (window.location.href = "/dashboard")}>Dashboard</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onClick={handleLogout}>Logout</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    onClick={() => window.location.href = "/register"}
+                    className="bg-white text-black hover:bg-white/90"
+                  >
+                    Get Started
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -160,36 +168,42 @@ const Header = () => {
               </a>
             ))}
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-              {isAuthenticated ? (
-                <div className="flex items-center justify-between">
-                  <div className="text-white/70 text-sm truncate max-w-[60%]">{userEmail}</div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
-                      <Avatar className="size-9">
-                        {avatarUrl ? (
-                          <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
-                        ) : (
-                          <AvatarFallback>{avatarFallback}</AvatarFallback>
-                        )}
-                      </Avatar>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
-                      {isAdmin && (
-                        <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/admin/dashboard"; }}>Admin Dashboard</DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/dashboard"; }}>Dashboard</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}>Logout</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+              {isLoading ? (
+                <div className="h-10 w-full animate-pulse rounded-md bg-white/10" />
               ) : (
-                <Button
-                  onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/register"; }}
-                  className="bg-white text-black hover:bg-white/90"
-                >
-                  Get Started
-                </Button>
+                <>
+                  {isAuthenticated ? (
+                    <div className="flex items-center justify-between">
+                      <div className="text-white/70 text-sm truncate max-w-[60%]">{userEmail}</div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
+                          <Avatar className="size-9">
+                            {avatarUrl ? (
+                              <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
+                            ) : (
+                              <AvatarFallback>{avatarFallback}</AvatarFallback>
+                            )}
+                          </Avatar>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
+                          {isAdmin && (
+                            <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/admin/dashboard"; }}>Admin Dashboard</DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/dashboard"; }}>Dashboard</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem variant="destructive" onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}>Logout</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/register"; }}
+                      className="bg-white text-black hover:bg-white/90"
+                    >
+                      Get Started
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </nav>

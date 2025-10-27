@@ -3,6 +3,8 @@ import { loadDevelopers } from "../../data/loadDevs";
 import MainLayout from "../../components/MainLayout.astro";
 import ProfileCard from "../../components/shared/ProfileCard";
 import OnchainProfile from "../../components/onchain/OnchainProfile";
+import WelcomeBanner from "../../components/shared/profile/WelcomeBanner";
+import PendingVerificationBanner from "../../components/shared/profile/PendingVerificationBanner";
 import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
 import { getDeveloperByUsername, getCurrentUser } from "../../lib/auth";
 
@@ -60,63 +62,19 @@ if (!developer) {
   <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
       <!-- Welcome Banner -->
-      {
-        isWelcome && isOwner && (
-          <div class="mx-auto mb-6 max-w-2xl rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
-            <h3 class="font-semibold">🎉 Welcome to Dolphinder!</h3>
-            <p class="mt-1 text-sm">
-              Your profile has been created successfully! Complete your profile
-              below to get verified by our team.
-            </p>
-          </div>
-        )
-      }
+      {isWelcome && isOwner && <WelcomeBanner client:only="react" />}
 
       <!-- Pending Verification Banner -->
       {
         isOwner && developer && !developer.is_verified && !isWelcome && (
-          <div class="mx-auto mb-6 max-w-2xl rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
-            <h3 class="font-semibold">⏳ Pending Verification</h3>
-            <p class="mt-1 text-sm">
-              Your profile is awaiting admin approval. You can edit your
-              information below.
-            </p>
-          </div>
-        )
-      }
-
-      <!-- Edit Profile Button -->
-      {
-        isOwner && (
-          <div class="mx-auto mb-6 max-w-2xl text-right">
-            <a
-              href="/dashboard"
-              class="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                <path d="m15 5 4 4" />
-              </svg>
-              Edit Profile
-            </a>
-          </div>
+          <PendingVerificationBanner client:only="react" />
         )
       }
 
       <!-- Profile Card -->
       <div class="mx-auto max-w-2xl">
         <div
-          class="rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
+          class="relative rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
         >
           <div id="static-profile" style="display:none">
             <ProfileCard
@@ -130,12 +88,17 @@ if (!developer) {
               linkedin={dev.linkedin}
               website={dev.website}
               walletAddress={dev.slushWallet}
+              showEditButton={isOwner || undefined}
             />
           </div>
 
           <!-- On-chain profile overlay (Walrus JSON) -->
           <div id="onchain-profile">
-            <OnchainProfile client:only="react" username={dev.username} />
+            <OnchainProfile
+              client:only="react"
+              username={dev.username}
+              showEditButton={isOwner || undefined}
+            />
           </div>
         </div>
       </div>

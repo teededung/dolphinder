@@ -18,7 +18,7 @@ type OnchainData = {
   certificates?: any[];
 };
 
-export function OnchainProfile({ username }: { username: string }) {
+export function OnchainProfile({ username, showEditButton }: { username: string; showEditButton?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<OnchainData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +107,7 @@ export function OnchainProfile({ username }: { username: string }) {
       website={data.profile?.website}
       walletAddress={owner || undefined}
       isVerified={isVerified ?? undefined}
+      showEditButton={showEditButton}
     />
   );
 }

@@ -1,6 +1,7 @@
-import { Github, Linkedin, Globe } from 'lucide-react';
+import { Github, Linkedin, Globe, Database, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import CopyButton from './CopyButton';
+import EditButton from './profile/EditButton';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -13,6 +14,7 @@ type ProfileCardProps = {
   website?: string;
   walletAddress?: string;
   isVerified?: boolean;
+  showEditButton?: boolean;
 };
 
 export default function ProfileCard({
@@ -26,9 +28,15 @@ export default function ProfileCard({
   website,
   walletAddress,
   isVerified,
+  showEditButton,
 }: ProfileCardProps) {
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-3">
+      {showEditButton && (
+        <div className="absolute top-0 right-0 z-10">
+          <EditButton />
+        </div>
+      )}
       {/* Badges */}
       <div className="flex justify-center gap-2">
         {variant === 'onchain' ? (
@@ -39,14 +47,14 @@ export default function ProfileCard({
             </span>
             {isVerified === true && (
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-7 9.5a.75.75 0 01-1.127.075l-3.5-3.5a.75.75 0 011.06-1.06l2.894 2.893 6.48-8.788a.75.75 0 011.05-.172z" clipRule="evenodd" /></svg>
+                <Check className="h-4 w-4" />
                 Verified
               </span>
             )}
           </>
         ) : (
           <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-400/10 px-3 py-1 text-sm text-orange-300">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M3.5 4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4.5Zm2 1V14h9V5.5h-9Z"/></svg>
+            <Database className="h-4 w-4" />
             Off-chain
           </span>
         )}
@@ -60,13 +68,6 @@ export default function ProfileCard({
             alt={name || username || 'avatar'}
             className="h-40 w-40 rounded-full object-cover border-4 border-white/20 shadow"
           />
-        </div>
-      )}
-
-      {/* Not verified alert for onchain */}
-      {variant === 'onchain' && isVerified === false && (
-        <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-yellow-200">
-          On-chain profile found, but the profile is not verified.
         </div>
       )}
 

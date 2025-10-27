@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
+import { isAdmin } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -25,9 +26,18 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       );
     }
 
+    // Check if user is admin and return appropriate redirect
+    const redirectTo = isAdmin(data.user.email || '') 
+      ? '/admin/dashboard' 
+      : '/dashboard';
+
     // Session is now saved in cookies automatically via serverClient
     return new Response(
-      JSON.stringify({ success: true, user: data.user }),
+      JSON.stringify({ 
+        success: true, 
+        user: data.user,
+        redirectTo 
+      }),
       { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }

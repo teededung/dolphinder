@@ -1,5 +1,5 @@
-import { useState } from "react";
-import ConnectBtn from "../common/ConnectBtn";
+import { useState, useEffect } from "react";
+import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
 import { Button } from "../ui/button";
 
 const navItems = [
@@ -23,6 +23,22 @@ const navItems = [
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        setIsAuthenticated(true);
+        setUserEmail(user.email || null);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -51,9 +67,43 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Desktop Connect Button */}
-          <div className="hidden md:block">
-            <ConnectBtn />
+          {/* Desktop Auth Button */}
+          <div className="hidden items-center gap-3 md:flex">
+            {isAuthenticated ? (
+              <>
+                <a
+                  href="/dashboard"
+                  className="text-sm text-white/90 transition-colors duration-200 hover:text-white"
+                >
+                  Dashboard
+                </a>
+                <Button
+                  onClick={async () => {
+                    const supabase = getSupabaseBrowserClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
+                  }}
+                  className="bg-white/10 hover:bg-white/20"
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  className="text-sm text-white/90 transition-colors duration-200 hover:text-white"
+                >
+                  Login
+                </a>
+                <Button
+                  onClick={() => window.location.href = "/register"}
+                  className="bg-white text-black hover:bg-white/90"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -99,8 +149,42 @@ const Header = () => {
                 {item.label}
               </a>
             ))}
-            <div className="border-t border-white/10 pt-4">
-              <ConnectBtn />
+            <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
+              {isAuthenticated ? (
+                <>
+                  <a
+                    href="/dashboard"
+                    className="py-2 text-center text-white/90 transition-colors duration-200 hover:text-white"
+                  >
+                    Dashboard
+                  </a>
+                  <Button
+                    onClick={async () => {
+                      const supabase = getSupabaseBrowserClient();
+                      await supabase.auth.signOut();
+                      window.location.href = "/";
+                    }}
+                    className="bg-white/10 hover:bg-white/20"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="py-2 text-center text-white/90 transition-colors duration-200 hover:text-white"
+                  >
+                    Login
+                  </a>
+                  <Button
+                    onClick={() => window.location.href = "/register"}
+                    className="bg-white text-black hover:bg-white/90"
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>

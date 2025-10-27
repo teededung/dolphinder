@@ -1,7 +1,7 @@
 ---
-import MainLayout from '../components/MainLayout.astro';
-import { createSupabaseServerClient } from '../lib/supabase/serverClient';
-import { getCurrentUser, getDeveloperProfile } from '../lib/auth';
+import MainLayout from "../components/MainLayout.astro";
+import { createSupabaseServerClient } from "../lib/supabase/serverClient";
+import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
 
 export const prerender = false;
 
@@ -10,302 +10,355 @@ const supabase = createSupabaseServerClient(Astro.cookies as any);
 const user = await getCurrentUser(supabase);
 
 if (!user) {
-  return Astro.redirect('/register');
+  return Astro.redirect("/login");
 }
 
 // Get developer profile
 const developer = await getDeveloperProfile(supabase, user.id);
 
 if (!developer) {
-  return Astro.redirect('/register');
+  // User logged in but no profile yet - redirect to register
+  return Astro.redirect("/register");
 }
 
-const isWelcome = Astro.url.searchParams.get('welcome') === 'true';
+const isWelcome = Astro.url.searchParams.get("welcome") === "true";
 ---
 
 <MainLayout title="Dashboard">
   <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">Dashboard</h1>
-        <p class="mt-1 text-muted-foreground">{user.email}</p>
+      <div class="mb-8 flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold">Dashboard</h1>
+          <p class="text-muted-foreground mt-1">{user.email}</p>
+        </div>
+        <button
+          id="logout-btn"
+          class="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-4 py-2 text-sm"
+        >
+          Logout
+        </button>
       </div>
-      <button
-        id="logout-btn"
-        class="rounded-md bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90"
-      >
-        Logout
-      </button>
-    </div>
 
-    {isWelcome && (
-      <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
-        <h3 class="font-semibold">Welcome to Dolphinder! 🎉</h3>
-        <p class="mt-1 text-sm">
-          Your profile has been created and is pending verification. Complete your profile below.
-        </p>
-      </div>
-    )}
+      {
+        isWelcome && (
+          <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
+            <h3 class="font-semibold">Welcome to Dolphinder! 🎉</h3>
+            <p class="mt-1 text-sm">
+              Your profile has been created and is pending verification.
+              Complete your profile below.
+            </p>
+          </div>
+        )
+      }
 
-    {!developer.is_verified && (
-      <div class="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
-        <h3 class="font-semibold">⏳ Pending Verification</h3>
-        <p class="mt-1 text-sm">
-          Your profile is awaiting admin approval. You can still edit your information.
-        </p>
-      </div>
-    )}
+      {
+        !developer.is_verified && (
+          <div class="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
+            <h3 class="font-semibold">⏳ Pending Verification</h3>
+            <p class="mt-1 text-sm">
+              Your profile is awaiting admin approval. You can still edit your
+              information.
+            </p>
+          </div>
+        )
+      }
 
-    <div class="grid gap-8 lg:grid-cols-3">
-      <!-- Profile Preview -->
-      <div class="lg:col-span-1">
-        <div class="rounded-lg border bg-card p-6">
-          <h2 class="mb-4 text-lg font-semibold">Profile Preview</h2>
-          <div class="space-y-4">
-            {developer.avatar && (
-              <img
-                src={developer.avatar}
-                alt={developer.name}
-                class="mx-auto h-32 w-32 rounded-full object-cover"
-              />
-            )}
-            <div class="text-center">
-              <h3 class="text-xl font-bold">{developer.name}</h3>
-              <p class="text-sm text-muted-foreground">@{developer.username}</p>
-              {developer.entry && (
-                <span class="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  {developer.entry}
-                </span>
-              )}
-            </div>
-            {developer.bio && (
-              <p class="text-center text-sm">{developer.bio}</p>
-            )}
-            <div class="space-y-2 text-sm">
-              {developer.github && (
-                <div class="flex items-center gap-2">
-                  <span class="text-muted-foreground">GitHub:</span>
-                  <a href={developer.github} target="_blank" class="text-primary hover:underline">
-                    {developer.github.replace('https://github.com/', '@')}
-                  </a>
-                </div>
-              )}
-              {developer.linkedin && (
-                <div class="flex items-center gap-2">
-                  <span class="text-muted-foreground">LinkedIn:</span>
-                  <a href={developer.linkedin} target="_blank" class="text-primary hover:underline">
-                    Profile
-                  </a>
-                </div>
-              )}
-              {developer.telegram && (
-                <div class="flex items-center gap-2">
-                  <span class="text-muted-foreground">Telegram:</span>
-                  <a href={developer.telegram} target="_blank" class="text-primary hover:underline">
-                    {developer.telegram}
-                  </a>
-                </div>
-              )}
-              {developer.slush_wallet && (
-                <div class="flex items-center gap-2">
-                  <span class="text-muted-foreground">Wallet:</span>
-                  <code class="text-xs">{developer.slush_wallet.slice(0, 10)}...</code>
-                </div>
-              )}
+      <div class="grid gap-8 lg:grid-cols-3">
+        <!-- Profile Preview -->
+        <div class="lg:col-span-1">
+          <div class="bg-card rounded-lg border p-6">
+            <h2 class="mb-4 text-lg font-semibold">Profile Preview</h2>
+            <div class="space-y-4">
+              {
+                developer.avatar && (
+                  <img
+                    src={developer.avatar}
+                    alt={developer.name}
+                    class="mx-auto h-32 w-32 rounded-full object-cover"
+                  />
+                )
+              }
+              <div class="text-center">
+                <h3 class="text-xl font-bold">{developer.name}</h3>
+                <p class="text-muted-foreground text-sm">
+                  @{developer.username}
+                </p>
+                {
+                  developer.entry && (
+                    <span class="bg-primary/10 text-primary mt-2 inline-block rounded-full px-3 py-1 text-xs font-medium">
+                      {developer.entry}
+                    </span>
+                  )
+                }
+              </div>
+              {
+                developer.bio && (
+                  <p class="text-center text-sm">{developer.bio}</p>
+                )
+              }
+              <div class="space-y-2 text-sm">
+                {
+                  developer.github && (
+                    <div class="flex items-center gap-2">
+                      <span class="text-muted-foreground">GitHub:</span>
+                      <a
+                        href={developer.github}
+                        target="_blank"
+                        class="text-primary hover:underline"
+                      >
+                        {developer.github.replace("https://github.com/", "@")}
+                      </a>
+                    </div>
+                  )
+                }
+                {
+                  developer.linkedin && (
+                    <div class="flex items-center gap-2">
+                      <span class="text-muted-foreground">LinkedIn:</span>
+                      <a
+                        href={developer.linkedin}
+                        target="_blank"
+                        class="text-primary hover:underline"
+                      >
+                        Profile
+                      </a>
+                    </div>
+                  )
+                }
+                {
+                  developer.telegram && (
+                    <div class="flex items-center gap-2">
+                      <span class="text-muted-foreground">Telegram:</span>
+                      <a
+                        href={developer.telegram}
+                        target="_blank"
+                        class="text-primary hover:underline"
+                      >
+                        {developer.telegram}
+                      </a>
+                    </div>
+                  )
+                }
+                {
+                  developer.slush_wallet && (
+                    <div class="flex items-center gap-2">
+                      <span class="text-muted-foreground">Wallet:</span>
+                      <code class="text-xs">
+                        {developer.slush_wallet.slice(0, 10)}...
+                      </code>
+                    </div>
+                  )
+                }
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Edit Form -->
-      <div class="lg:col-span-2">
-        <div class="rounded-lg border bg-card p-6">
-          <h2 class="mb-4 text-lg font-semibold">Edit Profile</h2>
-          <form id="profile-form" class="space-y-4">
-            <div>
-              <label for="name" class="block text-sm font-medium mb-2">
-                Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={developer.name}
-                required
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+        <!-- Edit Form -->
+        <div class="lg:col-span-2">
+          <div class="bg-card rounded-lg border p-6">
+            <h2 class="mb-4 text-lg font-semibold">Edit Profile</h2>
+            <form id="profile-form" class="space-y-4">
+              <div>
+                <label for="name" class="mb-2 block text-sm font-medium">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={developer.name}
+                  required
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="bio" class="block text-sm font-medium mb-2">
-                Bio
-              </label>
-              <textarea
-                id="bio"
-                name="bio"
-                rows="3"
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              >{developer.bio || ''}</textarea>
-            </div>
+              <div>
+                <label for="bio" class="mb-2 block text-sm font-medium">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  rows="3"
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                  >{developer.bio || ""}</textarea
+                >
+              </div>
 
-            <div>
-              <label for="entry" class="block text-sm font-medium mb-2">
-                Level/Role
-              </label>
-              <input
-                type="text"
-                id="entry"
-                name="entry"
-                value={developer.entry || ''}
-                placeholder="e.g., Senior Developer, Newbie, etc."
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+              <div>
+                <label for="entry" class="mb-2 block text-sm font-medium">
+                  Level/Role
+                </label>
+                <input
+                  type="text"
+                  id="entry"
+                  name="entry"
+                  value={developer.entry || ""}
+                  placeholder="e.g., Senior Developer, Newbie, etc."
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="github" class="block text-sm font-medium mb-2">
-                GitHub URL
-              </label>
-              <input
-                type="url"
-                id="github"
-                name="github"
-                value={developer.github || ''}
-                placeholder="https://github.com/username"
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+              <div>
+                <label for="github" class="mb-2 block text-sm font-medium">
+                  GitHub URL
+                </label>
+                <input
+                  type="url"
+                  id="github"
+                  name="github"
+                  value={developer.github || ""}
+                  placeholder="https://github.com/username"
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="linkedin" class="block text-sm font-medium mb-2">
-                LinkedIn URL
-              </label>
-              <input
-                type="url"
-                id="linkedin"
-                name="linkedin"
-                value={developer.linkedin || ''}
-                placeholder="https://linkedin.com/in/username"
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+              <div>
+                <label for="linkedin" class="mb-2 block text-sm font-medium">
+                  LinkedIn URL
+                </label>
+                <input
+                  type="url"
+                  id="linkedin"
+                  name="linkedin"
+                  value={developer.linkedin || ""}
+                  placeholder="https://linkedin.com/in/username"
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="telegram" class="block text-sm font-medium mb-2">
-                Telegram
-              </label>
-              <input
-                type="text"
-                id="telegram"
-                name="telegram"
-                value={developer.telegram || ''}
-                placeholder="https://t.me/username or @username"
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+              <div>
+                <label for="telegram" class="mb-2 block text-sm font-medium">
+                  Telegram
+                </label>
+                <input
+                  type="text"
+                  id="telegram"
+                  name="telegram"
+                  value={developer.telegram || ""}
+                  placeholder="https://t.me/username or @username"
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="slush_wallet" class="block text-sm font-medium mb-2">
-                Sui Wallet Address
-              </label>
-              <input
-                type="text"
-                id="slush_wallet"
-                name="slush_wallet"
-                value={developer.slush_wallet || ''}
-                placeholder="0x..."
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+              <div>
+                <label
+                  for="slush_wallet"
+                  class="mb-2 block text-sm font-medium"
+                >
+                  Sui Wallet Address
+                </label>
+                <input
+                  type="text"
+                  id="slush_wallet"
+                  name="slush_wallet"
+                  value={developer.slush_wallet || ""}
+                  placeholder="0x..."
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+              </div>
 
-            <div>
-              <label for="avatar" class="block text-sm font-medium mb-2">
-                Avatar
-              </label>
-              <input
-                type="file"
-                id="avatar"
-                name="avatar"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                class="w-full rounded-md border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <p class="mt-1 text-xs text-muted-foreground">
-                Upload a new avatar (max 5MB). Supported formats: JPG, PNG, GIF, WebP
-              </p>
-            </div>
+              <div>
+                <label for="avatar" class="mb-2 block text-sm font-medium">
+                  Avatar
+                </label>
+                <input
+                  type="file"
+                  id="avatar"
+                  name="avatar"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  class="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                />
+                <p class="text-muted-foreground mt-1 text-xs">
+                  Upload a new avatar (max 5MB). Supported formats: JPG, PNG,
+                  GIF, WebP
+                </p>
+              </div>
 
-            <div id="error-message" class="hidden rounded-md bg-red-50 p-3 text-sm text-red-800">
-            </div>
+              <div
+                id="error-message"
+                class="hidden rounded-md bg-red-50 p-3 text-sm text-red-800"
+              >
+              </div>
 
-            <div id="success-message" class="hidden rounded-md bg-green-50 p-3 text-sm text-green-800">
-            </div>
+              <div
+                id="success-message"
+                class="hidden rounded-md bg-green-50 p-3 text-sm text-green-800"
+              >
+              </div>
 
-            <button
-              type="submit"
-              id="submit-btn"
-              class="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              Save Changes
-            </button>
-          </form>
+              <button
+                type="submit"
+                id="submit-btn"
+                class="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-md px-4 py-2 font-medium disabled:opacity-50"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  </div>
 
   <script>
-    import { getSupabaseBrowserClient } from '../lib/supabase/browserClient';
+    import { getSupabaseBrowserClient } from "../lib/supabase/browserClient";
 
     const supabase = getSupabaseBrowserClient();
-    const form = document.getElementById('profile-form') as HTMLFormElement;
-    const errorDiv = document.getElementById('error-message') as HTMLDivElement;
-    const successDiv = document.getElementById('success-message') as HTMLDivElement;
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const form = document.getElementById("profile-form") as HTMLFormElement;
+    const errorDiv = document.getElementById("error-message") as HTMLDivElement;
+    const successDiv = document.getElementById(
+      "success-message"
+    ) as HTMLDivElement;
+    const submitBtn = document.getElementById(
+      "submit-btn"
+    ) as HTMLButtonElement;
 
     // Logout handler
-    document.getElementById('logout-btn')?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    });
+    document
+      .getElementById("logout-btn")
+      ?.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/";
+      });
 
     // Form submit handler
-    form?.addEventListener('submit', async (e) => {
+    form?.addEventListener("submit", async e => {
       e.preventDefault();
 
-      errorDiv.classList.add('hidden');
-      successDiv.classList.add('hidden');
+      errorDiv.classList.add("hidden");
+      successDiv.classList.add("hidden");
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Saving...';
+      submitBtn.textContent = "Saving...";
 
       try {
         const formData = new FormData(form);
 
-        const response = await fetch('/api/profile/update', {
-          method: 'POST',
+        const response = await fetch("/api/profile/update", {
+          method: "POST",
           body: formData,
         });
 
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || 'Failed to update profile');
+          throw new Error(result.error || "Failed to update profile");
         }
 
-        successDiv.textContent = 'Profile updated successfully!';
-        successDiv.classList.remove('hidden');
+        successDiv.textContent = "Profile updated successfully!";
+        successDiv.classList.remove("hidden");
 
         // Reload page after 1 second to show updated profile
         setTimeout(() => {
           window.location.reload();
         }, 1000);
-
       } catch (error: any) {
-        errorDiv.textContent = error.message || 'Failed to update profile';
-        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = error.message || "Failed to update profile";
+        errorDiv.classList.remove("hidden");
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Save Changes';
+        submitBtn.textContent = "Save Changes";
       }
     });
   </script>

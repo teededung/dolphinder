@@ -3,7 +3,11 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
-export default function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export default function LoginForm({ redirectTo = "/admin/dashboard" }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,8 +34,8 @@ export default function LoginForm() {
         throw new Error(result.error || "Failed to sign in");
       }
 
-      // SUCCESS! Redirect to admin dashboard
-      window.location.href = "/admin/dashboard";
+      // SUCCESS! Redirect to page specified by server (based on user role)
+      window.location.href = result.redirectTo || redirectTo;
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message || "Failed to sign in");

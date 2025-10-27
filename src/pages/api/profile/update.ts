@@ -36,6 +36,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const github = formData.get('github') as string;
     const linkedin = formData.get('linkedin') as string;
     const telegram = formData.get('telegram') as string;
+    const website = formData.get('website') as string;
     const slush_wallet = formData.get('slush_wallet') as string;
     const avatarFile = formData.get('avatar') as File | null;
 
@@ -55,6 +56,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       github: github?.trim() || null,
       linkedin: linkedin?.trim() || null,
       telegram: telegram?.trim() || null,
+      website: website?.trim() || null,
       slush_wallet: slush_wallet?.trim() || null,
     };
 

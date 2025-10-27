@@ -1,23 +1,18 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
-import { loadDevelopers } from "../data/loadDevs";
-import { Github, Linkedin, Globe, ExternalLink } from "@lucide/astro";
+import { Github, Linkedin, Globe } from "@lucide/astro";
 import { ProfileAvatar } from "../components/shared/ProfileAvatar";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getVerifiedDevelopers } from "../lib/auth";
 
 export const prerender = false;
 
-// Get developers from Supabase
+// Get verified developers from Supabase database
 const supabase = createSupabaseServerClient(Astro.cookies as any);
 const dbDevelopers = await getVerifiedDevelopers(supabase);
 
-// Fallback to JSON developers
-const jsonDevelopers = await loadDevelopers();
-
-// Merge both sources, prioritizing Supabase data
-// Map database developers to match JSON structure
-const mappedDbDevelopers = dbDevelopers.map(dev => ({
+// Map database developers to display format
+const developers = dbDevelopers.map(dev => ({
   name: dev.name,
   username: dev.username,
   avatar: dev.avatar || '',
@@ -25,17 +20,10 @@ const mappedDbDevelopers = dbDevelopers.map(dev => ({
   github: dev.github || '',
   linkedin: dev.linkedin || '',
   telegram: dev.telegram || '',
-  website: '', // Not in DB yet
+  website: dev.website || '',
   slushWallet: dev.slush_wallet || '',
   entry: dev.entry || '',
 }));
-
-// Filter out JSON developers that are already in Supabase
-const dbUsernames = new Set(dbDevelopers.map(d => d.username));
-const uniqueJsonDevelopers = jsonDevelopers.filter(d => !dbUsernames.has(d.username));
-
-// Combine both sources
-const developers = [...mappedDbDevelopers, ...uniqueJsonDevelopers];
 ---
 
 <MainLayout title="Developers - Dolphinder">

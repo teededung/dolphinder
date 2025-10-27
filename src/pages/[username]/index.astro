@@ -1,5 +1,4 @@
 ---
-import { loadDevelopers } from "../../data/loadDevs";
 import MainLayout from "../../components/MainLayout.astro";
 import ProfileCard from "../../components/shared/ProfileCard";
 import OnchainProfile from "../../components/onchain/OnchainProfile";
@@ -12,50 +11,40 @@ export const prerender = false;
 
 const { username } = Astro.params;
 
-// Try to get from Supabase first
+// Get developer from Supabase database
 const supabase = createSupabaseServerClient(Astro.cookies as any);
 const currentUser = await getCurrentUser(supabase);
-let developer = await getDeveloperByUsername(supabase, username || "");
+const developer = await getDeveloperByUsername(supabase, username || "");
 
-// Check if user can view this profile
-const isOwner =
-  developer && currentUser && currentUser.id === developer.user_id;
-if (developer) {
-  // Profile exists in Supabase
-  const isVerified = developer.is_verified;
+// Redirect to developers list if profile not found
+if (!developer) {
+  return Astro.redirect("/developers");
+}
 
-  // Only show if verified OR if owner viewing their own profile
-  if (!isVerified && !isOwner) {
-    return Astro.redirect("/developers");
-  }
+// Check if user is the owner of this profile
+const isOwner = currentUser && currentUser.id === developer.user_id;
+
+// Only show if verified OR if owner viewing their own profile
+if (!developer.is_verified && !isOwner) {
+  return Astro.redirect("/developers");
 }
 
 // Check if this is a welcome redirect
 const isWelcome = Astro.url.searchParams.get("welcome") === "true";
 
-// Fallback to JSON if not found in Supabase
-let dev: any;
-if (!developer) {
-  const developers = await loadDevelopers();
-  dev = developers.find(d => d.username === username);
-
-  if (!dev) {
-    return Astro.redirect("/developers");
-  }
-} else {
-  // Map database structure to component props
-  dev = {
-    name: developer.name,
-    username: developer.username,
-    avatar: developer.avatar || "",
-    bio: developer.bio || "",
-    github: developer.github || "",
-    linkedin: developer.linkedin || "",
-    telegram: developer.telegram || "",
-    slushWallet: developer.slush_wallet || "",
-    entry: developer.entry || "",
-  };
-}
+// Map database structure to component props
+const dev = {
+  name: developer.name,
+  username: developer.username,
+  avatar: developer.avatar || "",
+  bio: developer.bio || "",
+  github: developer.github || "",
+  linkedin: developer.linkedin || "",
+  telegram: developer.telegram || "",
+  website: developer.website || "",
+  slushWallet: developer.slush_wallet || "",
+  entry: developer.entry || "",
+};
 ---
 
 <MainLayout title={`${dev.name} - Developer Profile`}>

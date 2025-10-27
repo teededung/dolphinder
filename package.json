@@ -12,7 +12,7 @@
     "dev:add": "node scripts/add-developer.js add",
     "dev:list": "node scripts/add-developer.js list",
     "dev:validate": "node scripts/add-developer.js validate",
-    "dev:push": "tsx scripts/dev-json-to-supabase.ts",
+    "dev:push": "tsx scripts/import-json-to-supabase.ts",
     "db:push": "supabase db push"
   },
   "dependencies": {

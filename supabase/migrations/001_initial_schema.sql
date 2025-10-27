@@ -4,13 +4,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create developers table
 CREATE TABLE developers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL UNIQUE,
   username TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   avatar TEXT,
   github TEXT,
   linkedin TEXT,
   telegram TEXT,
+  website TEXT,
   bio TEXT,
   slush_wallet TEXT,
   entry TEXT,

@@ -9,6 +9,7 @@ export interface Developer {
   github: string | null;
   linkedin: string | null;
   telegram: string | null;
+  website: string | null;
   bio: string | null;
   slush_wallet: string | null;
   entry: string | null;

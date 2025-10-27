@@ -130,6 +130,20 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
       </div>
 
       <div>
+        <label htmlFor="website" className="mb-2 block text-sm font-medium">
+          Website
+        </label>
+        <input
+          type="url"
+          id="website"
+          name="website"
+          defaultValue={developer.website || ""}
+          placeholder="https://yourwebsite.com"
+          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+        />
+      </div>
+
+      <div>
         <label htmlFor="slush_wallet" className="mb-2 block text-sm font-medium">
           Sui Wallet Address
         </label>

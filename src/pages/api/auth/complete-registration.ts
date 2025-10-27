@@ -31,16 +31,75 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
       return redirect('/dashboard');
     }
 
-    // Create profile from user metadata
+    // Extract GitHub metadata
     const metadata = user.user_metadata;
     const username = metadata.user_name || metadata.preferred_username || user.email?.split('@')[0] || 'user';
     const name = metadata.full_name || metadata.name || username;
     const githubAvatarUrl = metadata.avatar_url;
     const githubProfile = metadata.user_name ? `https://github.com/${metadata.user_name}` : null;
 
-    console.log('[complete-registration] Creating profile for:', username);
+    console.log('[complete-registration] Checking for existing profile to claim...');
 
-    // Create profile
+    // Try to find existing profile to claim (user_id=NULL)
+    let existingProfile = null;
+
+    // 1. Check by GitHub URL (most reliable)
+    if (githubProfile) {
+      const { data } = await supabase
+        .from('developers')
+        .select('*')
+        .eq('github', githubProfile)
+        .is('user_id', null)
+        .single();
+      
+      if (data) {
+        console.log('[complete-registration] Found existing profile by GitHub URL:', data.username);
+        existingProfile = data;
+      }
+    }
+
+    // 2. If no match, check by username
+    if (!existingProfile) {
+      const { data } = await supabase
+        .from('developers')
+        .select('*')
+        .eq('username', username)
+        .is('user_id', null)
+        .single();
+      
+      if (data) {
+        console.log('[complete-registration] Found existing profile by username:', data.username);
+        existingProfile = data;
+      }
+    }
+
+    // If existing profile found, claim it by updating user_id
+    if (existingProfile) {
+      console.log('[complete-registration] Claiming existing profile:', existingProfile.username);
+      
+      const { error: updateError } = await supabase
+        .from('developers')
+        .update({
+          user_id: user.id,
+          // Only fill missing fields from GitHub OAuth
+          avatar: existingProfile.avatar || githubAvatarUrl,
+          github: existingProfile.github || githubProfile,
+          // Keep all existing data (name, bio, linkedin, telegram, slush_wallet, entry)
+        })
+        .eq('id', existingProfile.id);
+
+      if (updateError) {
+        console.error('[complete-registration] Failed to claim profile:', updateError);
+        throw updateError;
+      }
+
+      console.log('[complete-registration] Profile claimed successfully (is_verified remains true)');
+      return redirect('/dashboard?welcome=true');
+    }
+
+    // No existing profile found, create new one
+    console.log('[complete-registration] Creating new profile for:', username);
+
     const { error: insertError } = await supabase
       .from('developers')
       .insert({

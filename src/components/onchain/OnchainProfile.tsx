@@ -31,19 +31,21 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
       try {
         setLoading(true);
         setError(null);
+        
+        // Load on-chain data in background
         const devId = await getDevIdByUsername(username);
         if (!devId) {
           setData(null);
           setIsVerified(null);
-          const el = document.getElementById('static-profile');
-          if (el) el.style.removeProperty('display');
           return;
         }
+        
         const client = new SuiClient({ url: getFullnodeUrl('testnet') });
         const res = await client.getObject({ id: devId, options: { showContent: true } });
         const fields: any = (res.data as any)?.content?.fields;
         const verifiedFlag: boolean | undefined = typeof fields?.is_verified === 'boolean' ? fields.is_verified : undefined;
         const ownerAddr: string | undefined = typeof fields?.owner === 'string' ? fields.owner : undefined;
+        
         // walrus_blob_id is vector<u8> on-chain; decode to ASCII string
         let blobId: string | undefined;
         const raw = fields?.walrus_blob_id;
@@ -59,22 +61,40 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
         } else if (Array.isArray(raw)) {
           blobId = new TextDecoder().decode(new Uint8Array(raw));
         }
+        
         if (!blobId) {
           setData(null);
           setIsVerified(null);
-          const el2 = document.getElementById('static-profile');
-          if (el2) el2.style.removeProperty('display');
           return;
         }
+        
         const json = await fetchJson<OnchainData>(blobId);
-        console.log(json);
+        console.log('[OnchainProfile] Loaded on-chain data:', json);
 
         setData(json);
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);
-        // hide static fallback card when on-chain data exists
-        const el3 = document.getElementById('static-profile');
-        if (el3) el3.style.setProperty('display', 'none');
+        
+        // Show on-chain profile and hide static profile with smooth transition
+        const staticEl = document.getElementById('static-profile');
+        const onchainEl = document.getElementById('onchain-profile');
+        
+        if (staticEl && onchainEl) {
+          // Fade out static profile
+          staticEl.style.transition = 'opacity 0.3s ease-out';
+          staticEl.style.opacity = '0';
+          
+          setTimeout(() => {
+            staticEl.style.display = 'none';
+            onchainEl.style.removeProperty('display');
+            // Fade in on-chain profile
+            onchainEl.style.opacity = '0';
+            onchainEl.style.transition = 'opacity 0.3s ease-in';
+            setTimeout(() => {
+              onchainEl.style.opacity = '1';
+            }, 10);
+          }, 300);
+        }
 
         // avatar from on-chain json
         const maybeAvatar = json?.profile?.avatar;
@@ -82,19 +102,18 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
           setAvatar(maybeAvatar);
         }
       } catch (e: any) {
+        console.warn('[OnchainProfile] Failed to load on-chain data:', e?.message || e);
         setError(String(e?.message || e));
         setIsVerified(null);
-        const el4 = document.getElementById('static-profile');
-        if (el4) el4.style.removeProperty('display');
+        // Keep showing static profile on error
       } finally {
         setLoading(false);
       }
     })();
   }, [username]);
 
-  if (loading) return <div className="opacity-70">Loading on-chain profile...</div>;
-  if (error) return null; // show static profile fallback
-  if (!data) return null; // show static profile fallback
+  // Don't render anything while loading or on error - static profile will show instead
+  if (loading || error || !data) return null;
 
   return (
     <ProfileCard

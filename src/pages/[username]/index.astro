@@ -65,7 +65,8 @@ const dev = {
         <div
           class="relative rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
         >
-          <div id="static-profile" style="display:none">
+          <!-- Off-chain profile (shown immediately) -->
+          <div id="static-profile">
             <ProfileCard
               client:only="react"
               variant="offchain"
@@ -81,8 +82,8 @@ const dev = {
             />
           </div>
 
-          <!-- On-chain profile overlay (Walrus JSON) -->
-          <div id="onchain-profile">
+          <!-- On-chain profile overlay (loads in background) -->
+          <div id="onchain-profile" style="display:none">
             <OnchainProfile
               client:only="react"
               username={dev.username}

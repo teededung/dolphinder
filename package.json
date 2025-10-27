@@ -11,9 +11,12 @@
     "format:check": "prettier --check .",
     "dev:add": "node scripts/add-developer.js add",
     "dev:list": "node scripts/add-developer.js list",
-    "dev:validate": "node scripts/add-developer.js validate"
+    "dev:validate": "node scripts/add-developer.js validate",
+    "dev:push": "tsx scripts/dev-json-to-supabase.ts",
+    "db:push": "supabase db push"
   },
   "dependencies": {
+    "@astrojs/netlify": "^6.6.0",
     "@astrojs/react": "^4.4.0",
     "@lucide/astro": "^0.544.0",
     "@mysten/bcs": "^1.9.1",
@@ -26,6 +29,8 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-visually-hidden": "^1.2.3",
     "@react-three/fiber": "^9.4.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.76.1",
     "@tailwindcss/vite": "^4.1.16",
     "@tanstack/react-query": "^5.90.5",
     "@types/react": "^19.2.2",

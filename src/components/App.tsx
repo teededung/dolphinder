@@ -1,5 +1,6 @@
 import { GlobalSuiProvider } from "./providers/GlobalSuiProvider";
 import Header from "./shared/Header";
+import Footer from "./shared/Footer";
 import DialogStored from "./shared/DialogStored";
 
 interface AppProps {
@@ -15,6 +16,7 @@ export default function App({ children }: AppProps) {
     <GlobalSuiProvider>
       <Header />
       <main>{children}</main>
+      <Footer />
       <DialogStored />
     </GlobalSuiProvider>
   );

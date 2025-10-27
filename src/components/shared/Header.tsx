@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
 import { Button } from "../ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "../ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { getDeveloperProfile, isAdmin as checkIsAdmin } from "../../lib/auth";
+import { Menu } from "lucide-react";
 
 const navItems = [
   {
@@ -25,6 +29,9 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,6 +41,22 @@ const Header = () => {
       if (user) {
         setIsAuthenticated(true);
         setUserEmail(user.email || null);
+        setUserId(user.id || null);
+        setIsAdmin(user.email ? checkIsAdmin(user.email) : false);
+        try {
+          const profile = await getDeveloperProfile(supabase, user.id);
+          if (profile?.avatar) {
+            setAvatarUrl(profile.avatar);
+          }
+        } catch (_) {
+          // ignore avatar errors
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUserEmail(null);
+        setUserId(null);
+        setAvatarUrl(null);
+        setIsAdmin(false);
       }
     };
 
@@ -43,6 +66,14 @@ const Header = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const avatarFallback = (userEmail || "U").charAt(0).toUpperCase();
 
   return (
     <header className="fixed top-0 right-0 left-0 z-20 border-b border-white/10 bg-black/30 backdrop-blur-sm">
@@ -70,39 +101,32 @@ const Header = () => {
           {/* Desktop Auth Button */}
           <div className="hidden items-center gap-3 md:flex">
             {isAuthenticated ? (
-              <>
-                <a
-                  href="/dashboard"
-                  className="text-sm text-white/90 transition-colors duration-200 hover:text-white"
-                >
-                  Dashboard
-                </a>
-                <Button
-                  onClick={async () => {
-                    const supabase = getSupabaseBrowserClient();
-                    await supabase.auth.signOut();
-                    window.location.href = "/";
-                  }}
-                  className="bg-white/10 hover:bg-white/20"
-                >
-                  Logout
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
+                  <Avatar className="size-9">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
+                    ) : (
+                      <AvatarFallback>{avatarFallback}</AvatarFallback>
+                    )}
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard")}>Admin Dashboard</DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => (window.location.href = "/dashboard")}>Dashboard</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={handleLogout}>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <>
-                <a
-                  href="/login"
-                  className="text-sm text-white/90 transition-colors duration-200 hover:text-white"
-                >
-                  Login
-                </a>
                 <Button
                   onClick={() => window.location.href = "/register"}
                   className="bg-white text-black hover:bg-white/90"
                 >
                   Get Started
                 </Button>
-              </>
             )}
           </div>
 
@@ -110,25 +134,11 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="h-6 w-6 flex-col space-y-1 md:hidden"
+            className="md:hidden text-white"
             onClick={toggleMobileMenu}
             aria-label="Toggle mobile menu"
           >
-            <span
-              className={`h-0.5 w-6 bg-white transition-all duration-300 ${
-                isMobileMenuOpen ? "translate-y-2 rotate-45" : ""
-              }`}
-            ></span>
-            <span
-              className={`h-0.5 w-6 bg-white transition-all duration-300 ${
-                isMobileMenuOpen ? "opacity-0" : ""
-              }`}
-            ></span>
-            <span
-              className={`h-0.5 w-6 bg-white transition-all duration-300 ${
-                isMobileMenuOpen ? "-translate-y-2 -rotate-45" : ""
-              }`}
-            ></span>
+            <Menu className="size-6" />
           </Button>
         </div>
 
@@ -151,39 +161,35 @@ const Header = () => {
             ))}
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
               {isAuthenticated ? (
-                <>
-                  <a
-                    href="/dashboard"
-                    className="py-2 text-center text-white/90 transition-colors duration-200 hover:text-white"
-                  >
-                    Dashboard
-                  </a>
-                  <Button
-                    onClick={async () => {
-                      const supabase = getSupabaseBrowserClient();
-                      await supabase.auth.signOut();
-                      window.location.href = "/";
-                    }}
-                    className="bg-white/10 hover:bg-white/20"
-                  >
-                    Logout
-                  </Button>
-                </>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/70 text-sm truncate max-w-[60%]">{userEmail}</div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none h-9 w-9 p-0 rounded-full cursor-pointer appearance-none bg-transparent ring-1 ring-white/10 hover:bg-white/10 focus-visible:ring-white/40 transition-colors">
+                      <Avatar className="size-9">
+                        {avatarUrl ? (
+                          <AvatarImage src={avatarUrl} alt={userEmail || "avatar"} />
+                        ) : (
+                          <AvatarFallback>{avatarFallback}</AvatarFallback>
+                        )}
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/admin/dashboard"; }}>Admin Dashboard</DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/dashboard"; }}>Dashboard</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}>Logout</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
-                <>
-                  <a
-                    href="/login"
-                    className="py-2 text-center text-white/90 transition-colors duration-200 hover:text-white"
-                  >
-                    Login
-                  </a>
-                  <Button
-                    onClick={() => window.location.href = "/register"}
-                    className="bg-white text-black hover:bg-white/90"
-                  >
-                    Get Started
-                  </Button>
-                </>
+                <Button
+                  onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/register"; }}
+                  className="bg-white text-black hover:bg-white/90"
+                >
+                  Get Started
+                </Button>
               )}
             </div>
           </nav>

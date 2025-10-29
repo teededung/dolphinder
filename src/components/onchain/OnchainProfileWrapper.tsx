@@ -1,5 +1,5 @@
-import { GlobalSuiProvider } from "../providers/GlobalSuiProvider";
-import { OnchainProfile } from "./OnchainProfile";
+import { GlobalSuiProvider } from "../providers/GlobalSuiProvider.tsx";
+import OnchainProfile from "./OnchainProfile.tsx";
 
 interface OnchainProfileWrapperProps {
   username: string;
@@ -10,11 +10,13 @@ interface OnchainProfileWrapperProps {
  * Wrapper component for OnchainProfile that provides WalletProvider context
  * This is necessary because OnchainProfile is hydrated separately with client:only
  */
-export default function OnchainProfileWrapper({ username, showEditButton }: OnchainProfileWrapperProps) {
+function OnchainProfileWrapper({ username, showEditButton }: OnchainProfileWrapperProps) {
   return (
     <GlobalSuiProvider>
       <OnchainProfile username={username} showEditButton={showEditButton} />
     </GlobalSuiProvider>
   );
 }
+
+export default OnchainProfileWrapper;
 

@@ -486,7 +486,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
               </label>
             </div>
             <div className="flex w-[25%] items-center justify-center">
-              <img src="/walrus.svg" alt="Walrus" className="h-16 w-16 opacity-80" />
+              <img src="/walrus.svg" alt="Walrus" className="h-16 w-16 opacity-80" loading="lazy" />
             </div>
           </div>
 
@@ -563,7 +563,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
           </span>
         ) : enableWalrusPush ? (
           <span className="flex items-center justify-center gap-2">
-            <img src="/walrus.svg" alt="Walrus" className="h-5 w-5" />
+            <img src="/walrus.svg" alt="Walrus" className="h-5 w-5" loading="lazy" />
             Save & Push to Walrus
           </span>
         ) : (

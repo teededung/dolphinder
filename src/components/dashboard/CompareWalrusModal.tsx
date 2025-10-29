@@ -390,7 +390,7 @@ export default function CompareWalrusModal({
                     </th>
                     <th className="border-b border-l border-emerald-400/30 px-4 py-3 text-left font-semibold text-white">
                       <div className="flex items-center gap-2">
-                        <img src="/walrus.svg" alt="Walrus" className="h-4 w-4" />
+                        <img src="/walrus.svg" alt="Walrus" className="h-4 w-4" loading="lazy" />
                         <span>Onchain (Walrus)</span>
                       </div>
                     </th>
@@ -582,7 +582,7 @@ export default function CompareWalrusModal({
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    <img src="/walrus.svg" alt="Walrus" className="h-5 w-5" />
+                    <img src="/walrus.svg" alt="Walrus" className="h-5 w-5" loading="lazy" />
                     Sync to Walrus →
                   </span>
                 )}

@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { getDeveloperProfile, isAdmin as checkIsAdmin } from "../../lib/auth";
 import { Menu } from "lucide-react";
+import dolphinderLogo from "../../assets/dolphinder-logo.png";
 
 const navItems = [
   {
@@ -79,7 +80,7 @@ const Header = () => {
         {/* Desktop Header */}
         <div className="flex items-center justify-between">
           <a className="text-2xl font-bold flex items-center gap-2" href="/">
-            <img src="/dolphinder-logo.png" alt="Dolphinder" className="h-12 w-auto" />
+            <img src={dolphinderLogo.src} alt="Dolphinder" className="h-12 w-auto" width={dolphinderLogo.width} height={dolphinderLogo.height} loading="eager" fetchPriority="high" />
             <span className="text-xl font-bold">Dolphinder</span>
           </a>
 

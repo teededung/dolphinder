@@ -3,7 +3,7 @@ import { getDevIdByUsername } from '../../lib/sui-views';
 import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
 import { fromBase64 } from '@mysten/bcs';
 import { fetchJson } from '../../lib/walrus';
-import ProfileCard from '../shared/ProfileCard';
+import ProfileCard from '../shared/ProfileCard.tsx';
 
 type OnchainData = {
   profile?: {
@@ -30,7 +30,7 @@ type OnchainData = {
   }>;
 };
 
-export function OnchainProfile({ username, showEditButton }: { username: string; showEditButton?: boolean }) {
+function OnchainProfile({ username, showEditButton }: { username: string; showEditButton?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<OnchainData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -149,5 +149,3 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
 }
 
 export default OnchainProfile;
-
-

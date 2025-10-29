@@ -75,25 +75,13 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);
         
-        // Show onchain profile and hide static profile with smooth transition
+        // Show onchain profile and hide static profile instantly
         const staticEl = document.getElementById('static-profile');
         const onchainEl = document.getElementById('onchain-profile');
         
         if (staticEl && onchainEl) {
-          // Fade out static profile
-          staticEl.style.transition = 'opacity 0.3s ease-out';
-          staticEl.style.opacity = '0';
-          
-          setTimeout(() => {
-            staticEl.style.display = 'none';
-            onchainEl.style.removeProperty('display');
-            // Fade in onchain profile
-            onchainEl.style.opacity = '0';
-            onchainEl.style.transition = 'opacity 0.3s ease-in';
-            setTimeout(() => {
-              onchainEl.style.opacity = '1';
-            }, 10);
-          }, 300);
+          staticEl.style.display = 'none';
+          onchainEl.style.removeProperty('display');
         }
 
         // avatar from onchain json

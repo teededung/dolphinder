@@ -42,15 +42,18 @@ export default function ProfileCard({
         </div>
       )}
       {/* Badges */}
-      <div className="flex justify-center gap-2">
-        <WalrusBadge variant={variant} size="md" />
-        {variant === 'onchain' && isVerified === true && (
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-            <Check className="h-4 w-4" />
-            Verified
-          </span>
-        )}
-      </div>
+      {(variant === 'onchain' || (variant === 'offchain' && isOwner)) && (
+        <div className="flex justify-center gap-2">
+          {variant === 'onchain' && <WalrusBadge variant="onchain" size="md" />}
+          {variant === 'offchain' && isOwner && <WalrusBadge variant="offchain" size="md" />}
+          {variant === 'onchain' && isVerified === true && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
+              <Check className="h-4 w-4" />
+              Verified
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Avatar */}
       <div className="flex justify-center">

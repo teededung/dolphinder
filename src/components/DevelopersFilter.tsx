@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { Developer } from "../lib/auth";
 import { Github, Linkedin, Globe } from "lucide-react";
 import { ProfileAvatar } from "./shared/ProfileAvatar";
+import { Button } from "./ui/button";
 
 type FilterType = "all" | "onchain" | "offchain";
 
@@ -45,27 +45,29 @@ export default function DevelopersFilter({ developers }: DevelopersFilterProps) 
     <div>
       {/* Filter Buttons */}
       <div className="mb-8 flex justify-center gap-3">
-        <button
+        <Button
           onClick={() => setActiveFilter("all")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+          variant={activeFilter === "all" ? "default" : "ghost"}
+          className={
             activeFilter === "all"
-              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
+              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600"
               : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-          }`}
+          }
         >
           All ({developers.length})
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setActiveFilter("onchain")}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+          variant={activeFilter === "onchain" ? "default" : "ghost"}
+          className={
             activeFilter === "onchain"
-              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600"
               : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-          }`}
+          }
         >
           <img src="/walrus-token.svg" alt="Walrus" className="h-4 w-4" />
           Walrus ({onchainCount})
-        </button>
+        </Button>
       </div>
 
       {/* Developer Grid */}

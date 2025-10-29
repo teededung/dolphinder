@@ -1,4 +1,5 @@
 import React from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface WalrusBadgeProps {
   /** 'onchain' shows Walrus badge, 'offchain' shows Offchain badge */
@@ -27,12 +28,19 @@ export default function WalrusBadge({ variant, size = "md", className = "" }: Wa
 
   if (variant === "onchain") {
     return (
-      <span
-        className={`inline-flex items-center rounded-full bg-emerald-500/10 font-medium text-emerald-400 ${sizeClasses[size]} ${className}`}
-      >
-        <img src="/walrus-token.svg" alt="Walrus" className={iconSizes[size]} />
-        <span>Walrus</span>
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={`inline-flex items-center rounded-full bg-emerald-500/10 font-medium text-emerald-400 ${sizeClasses[size]} ${className}`}
+          >
+            <img src="/walrus-token.svg" alt="Walrus" className={iconSizes[size]} />
+            <span>Walrus</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>This developer's profile is stored on Walrus</p>
+        </TooltipContent>
+      </Tooltip>
     );
   }
 

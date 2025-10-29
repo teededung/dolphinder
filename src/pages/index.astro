@@ -2,6 +2,28 @@
 import MainLayout from "../components/MainLayout.astro";
 import Silk from "../components/react-bits/Silk";
 import CanvasBubbles from "../components/CanvasBubbles";
+import { createSupabaseServerClient } from "../lib/supabase/serverClient";
+import { getVerifiedDevelopers } from "../lib/auth";
+
+export const prerender = false;
+
+// Fetch verified developers from Supabase
+const supabase = createSupabaseServerClient(Astro.cookies as any);
+const dbDevelopers = await getVerifiedDevelopers(supabase);
+
+// Map database developers to Dev format
+const developers = dbDevelopers.map(dev => ({
+  name: dev.name,
+  username: dev.username,
+  avatar: dev.avatar || undefined,
+  github: dev.github || "",
+  linkedin: dev.linkedin || undefined,
+  telegram: dev.telegram || undefined,
+  website: dev.website || undefined,
+  bio: dev.bio || undefined,
+  slushWallet: dev.slush_wallet || undefined,
+  walrusBlobId: dev.walrus_blob_id || undefined,
+}));
 ---
 
 <MainLayout title="Dolphinder - Developer Directory">
@@ -20,7 +42,7 @@ import CanvasBubbles from "../components/CanvasBubbles";
 
     <!-- Developer Bubbles (Canvas) -->
     <div class="absolute inset-0">
-      <CanvasBubbles client:load />
+      <CanvasBubbles initialDevelopers={developers} client:load />
     </div>
 
     <!-- Main Content -->

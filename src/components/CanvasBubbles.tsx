@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { loadDevelopers, type Dev } from "../data/loadDevs";
+import type { Dev } from "../data/loadDevs";
 import { useModalStore } from "../store/useModalStore";
 import DeveloperModalCard from "./DeveloperModalCard";
 
@@ -21,6 +21,7 @@ type Bubble = {
   dirRotSpeed: number; // how fast the direction rotates
   driftSpeed: number; // per-frame drift magnitude
   w: number; // size weight (derived from score)
+  hasWalrus: boolean; // true if developer has Walrus storage
 };
 
 // === Click splash tuning (you can tweak these) ===
@@ -38,7 +39,13 @@ type ActivityScore = {
   fetchedAt: number; // ms since epoch
 };
 
+type DevelopersCache = {
+  developers: Dev[];
+  fetchedAt: number;
+};
+
 const ACTIVITY_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const DEVELOPERS_CACHE_KEY = "developers-cache";
 const GITHUB_API_BASE = "https://api.github.com";
 
 function parseGithubUsername(url: string, fallback: string): string {
@@ -143,7 +150,32 @@ function getInitials(name: string, username?: string): string {
   return "??";
 }
 
-const CanvasBubbles: React.FC = () => {
+type CanvasBubblesProps = {
+  initialDevelopers: Dev[];
+};
+
+function getCachedDevelopers(): Dev[] | null {
+  try {
+    const raw = localStorage.getItem(DEVELOPERS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DevelopersCache;
+    if (Date.now() - parsed.fetchedAt > ACTIVITY_CACHE_TTL_MS) return null;
+    return parsed.developers;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedDevelopers(developers: Dev[]): void {
+  try {
+    const payload: DevelopersCache = { developers, fetchedAt: Date.now() };
+    localStorage.setItem(DEVELOPERS_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore
+  }
+}
+
+const CanvasBubbles: React.FC<CanvasBubblesProps> = ({ initialDevelopers }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [developers, setDevelopers] = useState<Dev[]>([]);
@@ -153,27 +185,22 @@ const CanvasBubbles: React.FC = () => {
   const ripplesRef = useRef<Array<{ x: number; y: number; start: number }>>([]);
   const rafRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const lastSizeRef = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    let aborted = false;
-    const load = async () => {
-      try {
-        const devs = await loadDevelopers();
-        if (aborted) return;
-        setDevelopers(devs);
-      } catch (e) {
-        console.error("Failed to load developers", e);
-      }
-    };
-    load();
-    return () => {
-      aborted = true;
-    };
-  }, []);
+    // Try cache first, fallback to SSR props
+    const cached = getCachedDevelopers();
+    if (cached && cached.length > 0) {
+      setDevelopers(cached);
+    } else {
+      setDevelopers(initialDevelopers);
+      setCachedDevelopers(initialDevelopers);
+    }
+  }, [initialDevelopers]);
 
   // Prepare bubbles whenever developers change or size changes
   useEffect(() => {
@@ -187,13 +214,17 @@ const CanvasBubbles: React.FC = () => {
 
     const resize = () => {
       const rect = container.getBoundingClientRect();
-      canvas.width = Math.floor(rect.width * DPR);
-      canvas.height = Math.floor(rect.height * DPR);
+      const newWidth = Math.floor(rect.width * DPR);
+      const newHeight = Math.floor(rect.height * DPR);
+      canvas.width = newWidth;
+      canvas.height = newHeight;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      return { width: newWidth / DPR, height: newHeight / DPR };
     };
-    resize();
+    const initialSize = resize();
+    lastSizeRef.current = initialSize;
 
     const width = canvas.width / DPR;
     const height = canvas.height / DPR;
@@ -214,6 +245,7 @@ const CanvasBubbles: React.FC = () => {
 
     const bubbles: Bubble[] = developers.map((dev, i) => {
       const ghUser = parseGithubUsername(dev.github, dev.username);
+      const hasWalrus = Boolean(dev.walrusBlobId);
       const { fill, stroke } = pickColor(dev.username);
       const cached = getCachedActivity(ghUser);
       const baseScore = cached?.score ?? 0.2;
@@ -236,38 +268,38 @@ const CanvasBubbles: React.FC = () => {
         dirRotSpeed: (Math.random() - 0.5) * 0.0015, // very slow rotation
         driftSpeed: 0.006 + Math.random() * 0.008, // very gentle drift
         w,
+        hasWalrus,
       };
     });
 
     // Initial radii to fill screen by percentage
     assignRadiiByCoverage();
 
-    // Load images
+    // Load images from Supabase only (no GitHub fallback)
     bubbles.forEach(b => {
-      const ghUser = parseGithubUsername(b.dev.github, b.dev.username);
-      const src = b.dev.avatar || `https://github.com/${ghUser}.png`;
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.referrerPolicy = "no-referrer";
-      img.onload = () => {
-        b.img = img;
-        b.imgLoaded = true;
-      };
-      img.onerror = () => {
-        const fallback = new Image();
-        fallback.crossOrigin = "anonymous";
-        fallback.onload = () => {
-          b.img = fallback;
+      // Only load if Supabase avatar exists
+      if (b.dev.avatar) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.referrerPolicy = "no-referrer";
+        
+        img.onload = () => {
+          b.img = img;
           b.imgLoaded = true;
         };
-        fallback.onerror = () => {
-          // Both primary and fallback failed; we'll render initials.
+        
+        img.onerror = () => {
+          // If Supabase avatar fails, render initials
           b.img = undefined;
           b.imgLoaded = false;
         };
-        fallback.src = `https://github.com/${ghUser}.png`;
-      };
-      img.src = src;
+        
+        img.src = b.dev.avatar;
+      } else {
+        // No avatar in Supabase, render initials
+        b.img = undefined;
+        b.imgLoaded = false;
+      }
     });
 
     bubblesRef.current = bubbles;
@@ -312,6 +344,10 @@ const CanvasBubbles: React.FC = () => {
     const restitution = 0.82; // bounciness for collisions (lower to reduce jitter)
 
     const step = () => {
+      // Get current canvas dimensions (in case of resize)
+      const currentWidth = canvas.width / DPR;
+      const currentHeight = canvas.height / DPR;
+      
       // Update positions
       for (let i = 0; i < bubbles.length; i++) {
         const b = bubbles[i];
@@ -336,28 +372,28 @@ const CanvasBubbles: React.FC = () => {
         b.x += b.vx;
         b.y += b.vy;
 
-        // Soft edge repulsion to keep bubbles off the borders
+        // Soft edge repulsion to keep bubbles off the borders (use current dimensions)
         const edgeMargin = Math.max(20, b.r * 0.75);
         if (b.x - b.r < edgeMargin) {
           const t = (edgeMargin - (b.x - b.r)) / edgeMargin; // 0..1
           b.vx += 0.18 * t;
-        } else if (b.x + b.r > width - edgeMargin) {
-          const t = (edgeMargin - (width - (b.x + b.r))) / edgeMargin;
+        } else if (b.x + b.r > currentWidth - edgeMargin) {
+          const t = (edgeMargin - (currentWidth - (b.x + b.r))) / edgeMargin;
           b.vx -= 0.18 * t;
         }
         if (b.y - b.r < edgeMargin) {
           const t = (edgeMargin - (b.y - b.r)) / edgeMargin;
           b.vy += 0.18 * t;
-        } else if (b.y + b.r > height - edgeMargin) {
-          const t = (edgeMargin - (height - (b.y + b.r))) / edgeMargin;
+        } else if (b.y + b.r > currentHeight - edgeMargin) {
+          const t = (edgeMargin - (currentHeight - (b.y + b.r))) / edgeMargin;
           b.vy -= 0.18 * t;
         }
 
-        // Hard bounds as fallback (rare)
+        // Hard bounds as fallback (rare) - use current dimensions
         if (b.x - b.r < 0) { b.x = b.r; b.vx *= -restitution; }
-        if (b.x + b.r > width) { b.x = width - b.r; b.vx *= -restitution; }
+        if (b.x + b.r > currentWidth) { b.x = currentWidth - b.r; b.vx *= -restitution; }
         if (b.y - b.r < 0) { b.y = b.r; b.vy *= -restitution; }
-        if (b.y + b.r > height) { b.y = height - b.r; b.vy *= -restitution; }
+        if (b.y + b.r > currentHeight) { b.y = currentHeight - b.r; b.vy *= -restitution; }
       }
 
       // Resolve collisions (pairwise elastic, smoothed)
@@ -408,8 +444,8 @@ const CanvasBubbles: React.FC = () => {
         }
       }
 
-      // Render
-      ctx.clearRect(0, 0, width, height);
+      // Render - clear canvas with current dimensions
+      ctx.clearRect(0, 0, currentWidth, currentHeight);
       // Draw ripples first (under bubbles)
       {
         const now = performance.now();
@@ -436,10 +472,16 @@ const CanvasBubbles: React.FC = () => {
 
       // Then draw bubbles
       for (const b of bubbles) {
-        // Glow shadow
+        // Glow shadow (enhanced for Walrus bubbles)
         ctx.save();
-        ctx.shadowColor = b.stroke;
-        ctx.shadowBlur = 18;
+        if (b.hasWalrus) {
+          // Golden glow for Walrus-enabled bubbles
+          ctx.shadowColor = "hsl(45, 100%, 60%)";
+          ctx.shadowBlur = 28;
+        } else {
+          ctx.shadowColor = b.stroke;
+          ctx.shadowBlur = 18;
+        }
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fillStyle = b.color;
@@ -472,11 +514,17 @@ const CanvasBubbles: React.FC = () => {
           ctx.restore();
         }
 
-        // Stroke
+        // Stroke (enhanced for Walrus bubbles)
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.strokeStyle = b.stroke;
-        ctx.lineWidth = 2;
+        if (b.hasWalrus) {
+          // Golden stroke with extra width for Walrus-enabled bubbles
+          ctx.strokeStyle = "hsl(45, 100%, 60%)";
+          ctx.lineWidth = 3;
+        } else {
+          ctx.strokeStyle = b.stroke;
+          ctx.lineWidth = 2;
+        }
         ctx.stroke();
       }
 
@@ -484,13 +532,51 @@ const CanvasBubbles: React.FC = () => {
     };
     rafRef.current = requestAnimationFrame(step);
 
+    // Resize handler with immediate canvas resize + debounced bubble recalculation
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
     const onResize = () => {
-      resize();
+      // Immediately resize canvas to avoid visual lag
+      const newSize = resize();
+      const oldSize = lastSizeRef.current;
+      
+      // Calculate scale ratios
+      const scaleX = newSize.width / oldSize.width;
+      const scaleY = newSize.height / oldSize.height;
+      
+      // Immediately scale bubble positions to match new canvas size
+      if (oldSize.width > 0 && oldSize.height > 0) {
+        for (const b of bubblesRef.current) {
+          b.x *= scaleX;
+          b.y *= scaleY;
+        }
+      }
+      
+      lastSizeRef.current = newSize;
+      
+      // Debounce the expensive recalculation of bubble sizes
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        // Recalculate MIN_R, MAX_R based on new dimensions
+        const newMinDim = Math.min(newSize.width, newSize.height);
+        const NEW_MIN_R = Math.max(16, Math.min(newMinDim * 0.05, 40));
+        const NEW_MAX_R = Math.min(newMinDim * 0.16, 120);
+        
+        // Recalculate bubble radii for new viewport
+        const sumW2 = bubblesRef.current.reduce((acc, b) => acc + b.w * b.w, 0);
+        const targetArea = TARGET_COVERAGE * newSize.width * newSize.height;
+        const k = Math.sqrt(targetArea / (Math.PI * Math.max(1e-6, sumW2)));
+        
+        for (const b of bubblesRef.current) {
+          const desired = k * b.w;
+          b.r = Math.max(NEW_MIN_R, Math.min(NEW_MAX_R, desired));
+        }
+      }, 200); // 200ms debounce for size recalculation
     };
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelled = true;
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       window.removeEventListener("resize", onResize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };

@@ -1,6 +1,6 @@
 import { type Dev } from "../data/loadDevs";
 import ProfileAvatar from "./shared/ProfileAvatar";
-import { Github, Linkedin, Globe, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Globe, ExternalLink, Send } from "lucide-react";
 import { Button } from "./ui/button";
 
 type Props = {
@@ -8,9 +8,9 @@ type Props = {
 };
 
 export default function DeveloperModalCard({ dev }: Props) {
-  const openNew = (url?: string) => {
+  const openLink = (url?: string) => {
     if (!url) return;
-    window.open(url, "_blank");
+    window.location.href = url;
   };
 
   return (
@@ -29,12 +29,12 @@ export default function DeveloperModalCard({ dev }: Props) {
       {dev.bio && (
         <p className="max-w-md text-center text-sm text-white/80">{dev.bio}</p>
       )}
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         <Button
           variant="ghost"
           size="sm"
           className="bg-white/10 hover:bg-white/20"
-          onClick={() => openNew(dev.github)}
+          onClick={() => openLink(dev.github)}
         >
           <Github /> GitHub
         </Button>
@@ -43,9 +43,19 @@ export default function DeveloperModalCard({ dev }: Props) {
             variant="ghost"
             size="sm"
             className="bg-white/10 hover:bg-white/20"
-            onClick={() => openNew(dev.linkedin)}
+            onClick={() => openLink(dev.linkedin)}
           >
             <Linkedin /> LinkedIn
+          </Button>
+        )}
+        {dev.telegram && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-white/10 hover:bg-white/20"
+            onClick={() => openLink(dev.telegram)}
+          >
+            <Send /> Telegram
           </Button>
         )}
         {dev.website && (
@@ -53,7 +63,7 @@ export default function DeveloperModalCard({ dev }: Props) {
             variant="ghost"
             size="sm"
             className="bg-white/10 hover:bg-white/20"
-            onClick={() => openNew(dev.website)}
+            onClick={() => openLink(dev.website)}
           >
             <Globe /> Website
           </Button>
@@ -62,7 +72,7 @@ export default function DeveloperModalCard({ dev }: Props) {
       <div className="mt-1 flex w-full justify-center">
         <Button
           className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-          onClick={() => openNew(`/${dev.username}`)}
+          onClick={() => openLink(`/${dev.username}`)}
         >
           <ExternalLink /> View profile
         </Button>

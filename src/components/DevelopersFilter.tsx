@@ -66,7 +66,7 @@ export default function DevelopersFilter({ developers }: DevelopersFilterProps) 
           }
         >
           <img src="/walrus-token.svg" alt="Walrus" className="h-4 w-4" />
-          Walrus ({onchainCount})
+          Data on Walrus ({onchainCount})
         </Button>
       </div>
 

@@ -6,6 +6,7 @@ import { useModalStore } from "../../store/useModalStore";
 import { uploadJson } from "../../lib/walrus";
 import { getDevIdByUsername } from "../../lib/sui-views";
 import { makeRegisterTx, makeUpdateProfileTx } from "../../lib/sui-tx";
+import UnbindWarningModal from "./UnbindWarningModal";
 
 interface ProfileFormProps {
   developer: Developer;
@@ -21,6 +22,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
   const [walrusSuccess, setWalrusSuccess] = useState("");
   const [walrusStep, setWalrusStep] = useState("");
   const [enableWalrusPush, setEnableWalrusPush] = useState(false);
+  const [showUnbindModal, setShowUnbindModal] = useState(false);
   
   const currentAccount = useCurrentAccount();
   const { open, close } = useModalStore();
@@ -317,6 +319,20 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
       </div>
 
       <div>
+        <label htmlFor="avatar" className="mb-2 block text-sm font-medium">
+          Avatar URL
+        </label>
+        <input
+          type="url"
+          id="avatar"
+          name="avatar"
+          defaultValue={developer.avatar || ""}
+          placeholder="https://example.com/avatar.jpg"
+          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+        />
+      </div>
+
+      <div>
         <label className="mb-2 block text-sm font-medium">
           Sui Wallet Address (Testnet)
         </label>
@@ -340,7 +356,16 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
               </Button>
               <Button
                 type="button"
-                onClick={() => handleWalletChange("")}
+                onClick={() => {
+                  // Check if developer has on-chain profile
+                  if (developer.walrus_blob_id && developer.blob_object_id) {
+                    // Show warning modal for on-chain profiles
+                    setShowUnbindModal(true);
+                  } else {
+                    // No on-chain profile, unbind directly
+                    handleWalletChange("");
+                  }
+                }}
                 disabled={loading}
                 className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
               >
@@ -364,20 +389,6 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
           type="hidden"
           name="slush_wallet"
           value={bindedWallet}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="avatar" className="mb-2 block text-sm font-medium">
-          Avatar URL
-        </label>
-        <input
-          type="url"
-          id="avatar"
-          name="avatar"
-          defaultValue={developer.avatar || ""}
-          placeholder="https://example.com/avatar.jpg"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
         />
       </div>
 
@@ -472,6 +483,21 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
           "Save Changes"
         )}
       </Button>
+
+      {/* Unbind Warning Modal */}
+      {developer.walrus_blob_id && developer.blob_object_id && (
+        <UnbindWarningModal
+          open={showUnbindModal}
+          blobObjectId={developer.blob_object_id}
+          walrusBlobId={developer.walrus_blob_id}
+          onSuccess={() => {
+            setShowUnbindModal(false);
+            // Reload page to show updated state
+            window.location.reload();
+          }}
+          onCancel={() => setShowUnbindModal(false)}
+        />
+      )}
     </form>
   );
 }

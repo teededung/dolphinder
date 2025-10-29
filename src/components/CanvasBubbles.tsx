@@ -472,15 +472,16 @@ const CanvasBubbles: React.FC<CanvasBubblesProps> = ({ initialDevelopers }) => {
 
       // Then draw bubbles
       for (const b of bubbles) {
-        // Glow shadow (enhanced for Walrus bubbles)
+        // Glow shadow (only for Walrus bubbles - regular bubbles have no colored shadow)
         ctx.save();
         if (b.hasWalrus) {
-          // Golden glow for Walrus-enabled bubbles
-          ctx.shadowColor = "hsl(45, 100%, 60%)";
-          ctx.shadowBlur = 28;
+          // Emerald glow for Walrus-enabled bubbles (bright and prominent)
+          ctx.shadowColor = "rgb(16, 185, 129)"; // emerald-500
+          ctx.shadowBlur = 32;
         } else {
-          ctx.shadowColor = b.stroke;
-          ctx.shadowBlur = 18;
+          // Subtle neutral shadow for regular bubbles
+          ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+          ctx.shadowBlur = 8;
         }
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
@@ -514,16 +515,17 @@ const CanvasBubbles: React.FC<CanvasBubblesProps> = ({ initialDevelopers }) => {
           ctx.restore();
         }
 
-        // Stroke (enhanced for Walrus bubbles)
+        // Stroke (single border for all bubbles - white for regular, emerald for Walrus)
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         if (b.hasWalrus) {
-          // Golden stroke with extra width for Walrus-enabled bubbles
-          ctx.strokeStyle = "hsl(45, 100%, 60%)";
-          ctx.lineWidth = 3;
+          // Single emerald border for Walrus (matches ProfileAvatar ring-4 ring-emerald-400/70)
+          ctx.strokeStyle = "rgba(52, 211, 153, 0.7)"; // emerald-400/70
+          ctx.lineWidth = 4;
         } else {
-          ctx.strokeStyle = b.stroke;
-          ctx.lineWidth = 2;
+          // Subtle white border for regular bubbles (border-white/20)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.2)"; // white/20
+          ctx.lineWidth = 3;
         }
         ctx.stroke();
       }

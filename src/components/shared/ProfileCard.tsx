@@ -83,6 +83,7 @@ export default function ProfileCard({
           src={avatar}
           name={name || username || 'User'}
           username={username}
+          hasWalrus={variant === 'onchain'}
           className="border-4 border-white/20 shadow"
           size={160}
         />

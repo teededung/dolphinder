@@ -9,9 +9,10 @@ export type ProfileAvatarProps = {
   className?: string;
   size?: number; // optional fixed size in px; otherwise use className sizing
   alt?: string;
+  hasWalrus?: boolean; // if true, shows emerald border
 };
 
-export function ProfileAvatar({ src, name, username, className, size, alt }: ProfileAvatarProps) {
+export function ProfileAvatar({ src, name, username, className, size, alt, hasWalrus }: ProfileAvatarProps) {
   const [currentSrc, setCurrentSrc] = React.useState<string | undefined>(
     src ?? (username ? `https://github.com/${username}.png` : undefined)
   );
@@ -43,8 +44,15 @@ export function ProfileAvatar({ src, name, username, className, size, alt }: Pro
 
   const initials = getInitials(name, username);
 
+  // Apply emerald border for Walrus developers (replaces default border)
+  const avatarClassName = cn(
+    hasWalrus 
+      ? "ring-4 ring-emerald-400/70" // Only emerald ring for Walrus
+      : className // Keep original styling for regular avatars
+  );
+
   return (
-    <Avatar className={cn(className)} style={style}>
+    <Avatar className={avatarClassName} style={style}>
       {!failed && currentSrc ? (
         <AvatarImage src={currentSrc} alt={alt ?? name} onLoadingStatusChange={handleStatusChange} />
       ) : (

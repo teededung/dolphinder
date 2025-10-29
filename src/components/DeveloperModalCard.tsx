@@ -20,6 +20,7 @@ export default function DeveloperModalCard({ dev }: Props) {
         name={dev.name}
         username={dev.username}
         size={96}
+        hasWalrus={Boolean(dev.walrusBlobId)}
         className="rounded-full border-4 border-white/20 shadow-lg"
       />
       <div className="text-center">

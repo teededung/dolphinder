@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, Download, GitCompare } from 'lucide-react';
 import type { WalrusBlobMetadata } from '../../lib/walrus-metadata';
 import { getSuiscanObjectUrl, getWalrusAggregatorUrl } from '../../lib/blockchain-utils';
+import type { Developer } from '../../lib/auth';
+import CompareWalrusModal from './CompareWalrusModal';
 
 interface WalrusStorageInfoProps {
   blobMetadata: WalrusBlobMetadata;
   devId: string;
   walrusBlobId: string;
   blobObjectId: string;
+  developer: Developer;
 }
 
 export default function WalrusStorageInfo({
@@ -15,8 +18,10 @@ export default function WalrusStorageInfo({
   devId,
   walrusBlobId,
   blobObjectId,
+  developer,
 }: WalrusStorageInfoProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   const storageDuration = blobMetadata.storage
     ? blobMetadata.storage.end_epoch - blobMetadata.storage.start_epoch
@@ -87,10 +92,16 @@ export default function WalrusStorageInfo({
                   </div>
                 )}
 
-                {/* Tip */}
-                <p className="mt-2 rounded bg-emerald-500/10 px-2 py-1 text-[9px] text-emerald-300/80">
-                  💡 Re-push profile to extend storage duration
-                </p>
+                {/* Compare Button */}
+                <div className="mt-3 border-t border-emerald-400/10 pt-3">
+                  <button
+                    onClick={() => setShowCompareModal(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                  >
+                    <GitCompare className="h-3.5 w-3.5" />
+                    Compare to Walrus Onchain
+                  </button>
+                </div>
 
                 {/* External Links */}
                 <div className="mt-3 space-y-1.5 border-t border-emerald-400/10 pt-2">
@@ -150,6 +161,15 @@ export default function WalrusStorageInfo({
           </p>
         </div>
       )}
+
+      {/* Compare Modal */}
+      <CompareWalrusModal
+        open={showCompareModal}
+        onClose={() => setShowCompareModal(false)}
+        walrusBlobId={walrusBlobId}
+        blobObjectId={blobObjectId}
+        developer={developer}
+      />
     </div>
   );
 }

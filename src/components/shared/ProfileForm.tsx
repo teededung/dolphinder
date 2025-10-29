@@ -464,74 +464,69 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         />
       </div>
 
-      {/* Walrus Push Section */}
-      <div className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-4">
-        <div className="mb-3 flex items-start gap-4">
-          <div className="flex flex-1 items-start gap-3">
-            <input
-              type="checkbox"
-              id="enableWalrusPush"
-              checked={enableWalrusPush}
-              onChange={(e) => setEnableWalrusPush(e.target.checked)}
-              disabled={!bindedWallet || loading || walrusLoading}
-              className="mt-1"
-            />
-            <label htmlFor="enableWalrusPush" className="flex-1 text-sm">
-              <span className="font-semibold">Push to Walrus (Onchain Storage)</span>
-              <p className="mt-1 text-xs text-white/70">
-                Store your profile on Sui blockchain for verifiability and censorship-resistance.
-                Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"}
-              </p>
-            </label>
-          </div>
-          <div className="flex w-[25%] items-center justify-center">
-            <img src="/walrus.svg" alt="Walrus" className="h-16 w-16 opacity-80" />
-          </div>
-        </div>
-
-        {developer.walrus_blob_id && (
-          <div className="mt-2 rounded-md bg-green-400/10 border border-green-400/30 p-2 text-xs">
-            <span className="font-semibold text-green-300">✓ Already onchain:</span>{" "}
-            <code className="text-green-200">{developer.walrus_blob_id.slice(0, 12)}...</code>
-          </div>
-        )}
-
-        {walrusStep && (
-          <div className="mt-2 space-y-2">
-            <div className="rounded-md bg-blue-50 border border-blue-400/30 p-2 text-xs text-blue-800">
-              <span className="flex items-center gap-2">
-                <svg className="h-3 w-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {walrusStep}
-              </span>
+      {/* Walrus Push Section - Only show if user doesn't have onchain profile yet */}
+      {!developer.walrus_blob_id && !developer.blob_object_id && (
+        <div className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-4">
+          <div className="mb-3 flex items-start gap-4">
+            <div className="flex flex-1 items-start gap-3">
+              <input
+                type="checkbox"
+                id="enableWalrusPush"
+                checked={enableWalrusPush}
+                onChange={(e) => setEnableWalrusPush(e.target.checked)}
+                disabled={!bindedWallet || loading || walrusLoading}
+                className="mt-1"
+              />
+              <label htmlFor="enableWalrusPush" className="flex-1 text-sm">
+                <span className="font-semibold">Push to Walrus (Onchain Storage)</span>
+                <p className="mt-1 text-xs text-white/70">
+                  Store your profile on Sui blockchain for verifiability and censorship-resistance.
+                  Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"}
+                </p>
+              </label>
             </div>
-            {(walrusStep.includes("Uploading to Walrus") || walrusStep.includes("Creating blockchain") || walrusStep.includes("sign the transaction")) && (
-              <div className="rounded-md bg-yellow-50 border border-yellow-400/30 p-2 text-xs text-yellow-800">
+            <div className="flex w-[25%] items-center justify-center">
+              <img src="/walrus.svg" alt="Walrus" className="h-16 w-16 opacity-80" />
+            </div>
+          </div>
+
+          {walrusStep && (
+            <div className="mt-2 space-y-2">
+              <div className="rounded-md bg-blue-50 border border-blue-400/30 p-2 text-xs text-blue-800">
                 <span className="flex items-center gap-2">
-                  <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg className="h-3 w-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <strong>Please wait for wallet popup to appear</strong>
+                  {walrusStep}
                 </span>
               </div>
-            )}
-          </div>
-        )}
+              {(walrusStep.includes("Uploading to Walrus") || walrusStep.includes("Creating blockchain") || walrusStep.includes("sign the transaction")) && (
+                <div className="rounded-md bg-yellow-50 border border-yellow-400/30 p-2 text-xs text-yellow-800">
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <strong>Please wait for wallet popup to appear</strong>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
-        {walrusError && (
-          <div className="mt-2 rounded-md bg-red-50 p-2 text-xs text-red-800">
-            {walrusError}
-          </div>
-        )}
+          {walrusError && (
+            <div className="mt-2 rounded-md bg-red-50 p-2 text-xs text-red-800">
+              {walrusError}
+            </div>
+          )}
 
-        {walrusSuccess && (
-          <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-800">
-            {walrusSuccess}
-          </div>
-        )}
-      </div>
+          {walrusSuccess && (
+            <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-800">
+              {walrusSuccess}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">

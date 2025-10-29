@@ -3,7 +3,7 @@ import MainLayout from "../components/MainLayout.astro";
 import CopyButton from "../components/shared/CopyButton";
 import ProfileFormWrapper from "../components/shared/ProfileFormWrapper";
 import WalrusBadge from "../components/shared/WalrusBadge";
-import WalrusStorageInfo from "../components/dashboard/WalrusStorageInfo";
+import WalrusStorageInfoWrapper from "../components/dashboard/WalrusStorageInfoWrapper";
 import EditableAvatar from "../components/dashboard/EditableAvatar";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
@@ -194,12 +194,13 @@ function formatTelegramLink(telegram: string | null): string {
               <!-- Onchain Verification - Walrus Storage Info -->
               {
                 developer.walrus_blob_id && devId && blobMetadata && (
-                  <WalrusStorageInfo
+                  <WalrusStorageInfoWrapper
                     client:load
                     blobMetadata={blobMetadata}
                     devId={devId}
                     walrusBlobId={developer.walrus_blob_id}
                     blobObjectId={developer.blob_object_id || ""}
+                    developer={developer}
                   />
                 )
               }

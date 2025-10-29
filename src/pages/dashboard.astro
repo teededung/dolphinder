@@ -1,7 +1,7 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
 import LogoutButton from "../components/shared/LogoutButton";
-import ProfileForm from "../components/shared/ProfileForm";
+import ProfileFormWrapper from "../components/shared/ProfileFormWrapper";
 import CopyButton from "../components/shared/CopyButton";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
@@ -229,7 +229,7 @@ function formatTelegramLink(telegram: string | null): string {
         <div class="lg:col-span-2">
           <div class="bg-card rounded-lg border p-6">
             <h2 class="mb-4 text-lg font-semibold">Edit Profile</h2>
-            <ProfileForm client:load developer={developer} />
+            <ProfileFormWrapper client:load developer={developer} />
           </div>
         </div>
       </div>

@@ -40,25 +40,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const slush_wallet = formData.get('slush_wallet') as string;
     const avatarFile = formData.get('avatar') as File | null;
 
-    // Validate required fields
-    if (!name || name.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Name is required' }),
-        { status: 400 }
-      );
-    }
-
     // Prepare update data
-    const updateData: any = {
-      name: name.trim(),
-      bio: bio?.trim() || null,
-      entry: entry?.trim() || null,
-      github: github?.trim() || null,
-      linkedin: linkedin?.trim() || null,
-      telegram: telegram?.trim() || null,
-      website: website?.trim() || null,
-      slush_wallet: slush_wallet?.trim() || null,
-    };
+    const updateData: any = {};
+
+    // Only include fields that are provided
+    if (name !== null) {
+      // Validate name if provided
+      if (name.trim().length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Name cannot be empty' }),
+          { status: 400 }
+        );
+      }
+      updateData.name = name.trim();
+    }
+    
+    if (bio !== null) updateData.bio = bio?.trim() || null;
+    if (entry !== null) updateData.entry = entry?.trim() || null;
+    if (github !== null) updateData.github = github?.trim() || null;
+    if (linkedin !== null) updateData.linkedin = linkedin?.trim() || null;
+    if (telegram !== null) updateData.telegram = telegram?.trim() || null;
+    if (website !== null) updateData.website = website?.trim() || null;
+    if (slush_wallet !== null) updateData.slush_wallet = slush_wallet?.trim() || null;
 
     // Handle avatar upload if provided
     if (avatarFile && avatarFile.size > 0) {

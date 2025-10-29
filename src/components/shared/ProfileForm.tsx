@@ -200,8 +200,8 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
           website: (formData.get("website") as string) || "",
           avatar: avatarBase64, // Always base64 or URL for Walrus blob
         },
-        projects: [],
-        certificates: [],
+        projects: developer.projects || [],
+        certificates: developer.certificates || [],
       };
 
       // Debug: Log blob content before upload
@@ -256,6 +256,8 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         telegram: (formData.get("telegram") as string) || "",
         website: (formData.get("website") as string) || "",
         avatar: developer.avatar || "", // Keep existing avatar path
+        projects: developer.projects || [],
+        certificates: developer.certificates || [],
       };
       
       const response = await fetch("/api/profile/push-walrus", {

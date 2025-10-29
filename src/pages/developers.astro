@@ -22,6 +22,8 @@ const developers = dbDevelopers.map(dev => ({
   website: dev.website || "",
   slushWallet: dev.slush_wallet || "",
   entry: dev.entry || "",
+  projects: dev.projects || [],
+  certificates: dev.certificates || [],
   walrusBlobId: dev.walrus_blob_id || null,
 }));
 ---

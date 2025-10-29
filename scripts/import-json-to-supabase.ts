@@ -32,6 +32,8 @@ interface JSONDeveloper {
   slushWallet?: string;
   entry?: string;
   website?: string;
+  projects?: any[];
+  certificates?: any[];
 }
 
 interface DBDeveloper {
@@ -45,6 +47,8 @@ interface DBDeveloper {
   bio: string | null;
   slush_wallet: string | null;
   entry: string | null;
+  projects: any[];
+  certificates: any[];
   user_id: null;
   is_verified: boolean;
 }
@@ -61,6 +65,8 @@ function transformDeveloper(json: JSONDeveloper): DBDeveloper {
     bio: json.bio || null,
     slush_wallet: json.slushWallet || null,
     entry: json.entry || null,
+    projects: json.projects || [],
+    certificates: json.certificates || [],
     user_id: null,
     is_verified: true
   };

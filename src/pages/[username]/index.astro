@@ -45,6 +45,8 @@ const dev = {
   website: developer.website || "",
   slushWallet: developer.slush_wallet || "",
   entry: developer.entry || "",
+  projects: developer.projects || [],
+  certificates: developer.certificates || [],
   walrusBlobId: developer.walrus_blob_id || null,
 };
 ---
@@ -76,10 +78,14 @@ const dev = {
               username={dev.username}
               avatar={dev.avatar}
               bio={dev.bio}
+              entry={dev.entry}
               github={dev.github}
               linkedin={dev.linkedin}
+              telegram={dev.telegram}
               website={dev.website}
               walletAddress={dev.slushWallet}
+              projects={dev.projects}
+              certificates={dev.certificates}
               showEditButton={isOwner || undefined}
               isOwner={isOwner || undefined}
             />

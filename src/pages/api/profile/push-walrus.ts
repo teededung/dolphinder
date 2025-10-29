@@ -79,6 +79,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       telegram: profileFields.telegram?.trim() || null,
       website: profileFields.website?.trim() || null,
       avatar: profileFields.avatar?.trim() || null,
+      projects: profileFields.projects || [],
+      certificates: profileFields.certificates || [],
     };
     
     if (blobObjectId && typeof blobObjectId === 'string') {

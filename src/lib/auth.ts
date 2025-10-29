@@ -13,6 +13,8 @@ export interface Developer {
   bio: string | null;
   slush_wallet: string | null;
   entry: string | null;
+  projects: any[] | null; // Array of project objects
+  certificates: any[] | null; // Array of certificate objects
   walrus_blob_id: string | null;
   blob_object_id: string | null; // Sui object ID of Walrus Blob (for metadata queries)
   is_verified: boolean;

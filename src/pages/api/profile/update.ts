@@ -39,6 +39,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const website = formData.get('website') as string;
     const slush_wallet = formData.get('slush_wallet') as string;
     const avatarFile = formData.get('avatar') as File | null;
+    const projectsJson = formData.get('projects') as string;
+    const certificatesJson = formData.get('certificates') as string;
 
     // Prepare update data
     const updateData: any = {};
@@ -62,6 +64,29 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (telegram !== null) updateData.telegram = telegram?.trim() || null;
     if (website !== null) updateData.website = website?.trim() || null;
     if (slush_wallet !== null) updateData.slush_wallet = slush_wallet?.trim() || null;
+    
+    // Handle projects and certificates (JSONB fields)
+    if (projectsJson !== null) {
+      try {
+        updateData.projects = projectsJson ? JSON.parse(projectsJson) : [];
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid projects JSON format' }),
+          { status: 400 }
+        );
+      }
+    }
+    
+    if (certificatesJson !== null) {
+      try {
+        updateData.certificates = certificatesJson ? JSON.parse(certificatesJson) : [];
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid certificates JSON format' }),
+          { status: 400 }
+        );
+      }
+    }
 
     // Handle avatar upload if provided
     if (avatarFile && avatarFile.size > 0) {

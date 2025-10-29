@@ -16,6 +16,7 @@ type ProfileCardProps = {
   walletAddress?: string;
   isVerified?: boolean;
   showEditButton?: boolean;
+  isOwner?: boolean;
 };
 
 export default function ProfileCard({
@@ -30,6 +31,7 @@ export default function ProfileCard({
   walletAddress,
   isVerified,
   showEditButton,
+  isOwner,
 }: ProfileCardProps) {
   return (
     <div className="relative space-y-3">
@@ -54,10 +56,12 @@ export default function ProfileCard({
             )}
           </>
         ) : (
-          <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-400/10 px-3 py-1 text-sm text-orange-300">
-            <Database className="h-4 w-4" />
-            Off-chain
-          </span>
+          isOwner && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-400/10 px-3 py-1 text-sm text-orange-300">
+              <Database className="h-4 w-4" />
+              Off-chain
+            </span>
+          )
         )}
       </div>
 

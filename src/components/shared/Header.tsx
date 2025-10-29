@@ -16,10 +16,6 @@ const navItems = [
     href: "/developers",
   },
   {
-    label: "Community",
-    href: "/community",
-  },
-  {
     label: "Showcase",
     href: "/showcase",
   },

@@ -56,7 +56,7 @@ export default function LoginForm({ redirectTo = "/admin/dashboard" }: LoginForm
           name="email"
           required
           autoComplete="email"
-          placeholder="admin@example.com"
+          placeholder="user@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />

@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 type AstroCookies = {
@@ -27,6 +28,27 @@ export function createSupabaseServerClient(cookies: AstroCookies): SupabaseClien
     },
   });
   return client as unknown as SupabaseClient;
+}
+
+/**
+ * Create a Supabase client with service role key for admin operations
+ * This bypasses Row Level Security (RLS) policies
+ * WARNING: Only use this for admin operations after proper authentication checks
+ */
+export function createSupabaseAdminClient(): SupabaseClient {
+  const supabaseUrl = (import.meta as any).env.PUBLIC_SUPABASE_URL as string | undefined;
+  const supabaseServiceRoleKey = (import.meta as any).env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
+  
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 

@@ -2,7 +2,7 @@
 import MainLayout from "../components/MainLayout.astro";
 import OAuthButton from "../components/shared/OAuthButton";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
-import { getCurrentUser } from "../lib/auth";
+import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
 
 export const prerender = false;
 
@@ -11,7 +11,15 @@ const supabase = createSupabaseServerClient(Astro.cookies as any);
 const user = await getCurrentUser(supabase);
 
 if (user) {
-  return Astro.redirect("/dashboard");
+  // Check if user has a developer profile
+  const developer = await getDeveloperProfile(supabase, user.id);
+
+  if (developer) {
+    // User has profile, redirect to dashboard
+    return Astro.redirect("/dashboard");
+  }
+  // User is logged in but no profile yet - allow them to stay on this page
+  // This will show the OAuth button which will create their profile
 }
 ---
 
@@ -21,11 +29,30 @@ if (user) {
       <div class="mx-auto max-w-md">
         <div class="bg-card rounded-lg border p-8 shadow-lg">
           <div class="mb-6 text-center">
-            <h1 class="text-3xl font-bold">Join Dolphinder</h1>
+            <h1 class="text-3xl font-bold">
+              {user ? "Complete Your Profile" : "Join Dolphinder"}
+            </h1>
             <p class="text-muted-foreground mt-2">
-              Connect with developers in the Sui ecosystem
+              {
+                user
+                  ? "Connect your GitHub account to create your profile"
+                  : "Connect with developers in the Sui ecosystem"
+              }
             </p>
           </div>
+
+          {
+            user && (
+              <div class="mb-4 rounded-md bg-yellow-50 p-4 text-sm text-yellow-800">
+                <p class="font-semibold">Profile Setup Required</p>
+                <p class="mt-1">
+                  You're logged in as {user.email}, but your profile hasn't been
+                  created yet. Click the button below to complete your
+                  registration.
+                </p>
+              </div>
+            )
+          }
 
           <OAuthButton client:load />
 
@@ -37,10 +64,17 @@ if (user) {
             </p>
           </div>
 
-          <div class="text-muted-foreground mt-6 text-center text-sm">
-            Already have an account?
-            <a href="/login" class="text-primary hover:underline"> Sign in </a>
-          </div>
+          {
+            !user && (
+              <div class="text-muted-foreground mt-6 text-center text-sm">
+                Already have an account?
+                <a href="/login" class="text-primary hover:underline">
+                  {" "}
+                  Sign in{" "}
+                </a>
+              </div>
+            )
+          }
         </div>
       </div>
     </div>

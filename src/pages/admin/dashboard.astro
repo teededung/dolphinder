@@ -1,7 +1,12 @@
 ---
 import MainLayout from "../../components/MainLayout.astro";
 import LogoutButton from "../../components/shared/LogoutButton";
-import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
+import ProfileAvatar from "../../components/shared/ProfileAvatar";
+import ActionButton from "../../components/admin/ActionButton";
+import {
+  createSupabaseServerClient,
+  createSupabaseAdminClient,
+} from "../../lib/supabase/serverClient";
 import {
   getCurrentUser,
   isAdmin,
@@ -24,9 +29,16 @@ if (!isAdmin(user.email)) {
   return new Response("Forbidden", { status: 403 });
 }
 
-// Fetch developers
-const pendingDevelopers = await getPendingDevelopers(supabase);
-const verifiedDevelopers = await getVerifiedDevelopers(supabase);
+// Fetch developers using admin client (bypasses RLS)
+const adminClient = createSupabaseAdminClient();
+const pendingDevelopers = await getPendingDevelopers(adminClient);
+const verifiedDevelopers = await getVerifiedDevelopers(adminClient);
+
+console.log("[Admin Dashboard] Pending developers:", pendingDevelopers.length);
+console.log(
+  "[Admin Dashboard] Verified developers:",
+  verifiedDevelopers.length
+);
 ---
 
 <MainLayout title="Admin Dashboard">
@@ -76,13 +88,13 @@ const verifiedDevelopers = await getVerifiedDevelopers(supabase);
                   <div class="bg-card rounded-lg border p-6">
                     <div class="flex items-start justify-between">
                       <div class="flex gap-4">
-                        {dev.avatar && (
-                          <img
-                            src={dev.avatar}
-                            alt={dev.name}
-                            class="h-16 w-16 rounded-full object-cover"
-                          />
-                        )}
+                        <ProfileAvatar
+                          src={dev.avatar}
+                          name={dev.name}
+                          username={dev.username}
+                          size={64}
+                          client:load
+                        />
                         <div>
                           <h3 class="text-lg font-semibold">{dev.name}</h3>
                           <p class="text-muted-foreground text-sm">
@@ -114,20 +126,25 @@ const verifiedDevelopers = await getVerifiedDevelopers(supabase);
                         </div>
                       </div>
                       <div class="flex gap-2">
-                        <button
-                          data-action="approve"
-                          data-id={dev.id}
-                          class="rounded-md bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+                        <ActionButton
+                          action="approve"
+                          developerId={dev.id}
+                          variant="default"
+                          size="sm"
+                          className="bg-green-600 text-white hover:bg-green-700"
+                          client:load
                         >
                           Approve
-                        </button>
-                        <button
-                          data-action="reject"
-                          data-id={dev.id}
-                          class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+                        </ActionButton>
+                        <ActionButton
+                          action="reject"
+                          developerId={dev.id}
+                          variant="destructive"
+                          size="sm"
+                          client:load
                         >
                           Reject
-                        </button>
+                        </ActionButton>
                       </div>
                     </div>
                   </div>
@@ -146,13 +163,13 @@ const verifiedDevelopers = await getVerifiedDevelopers(supabase);
                 verifiedDevelopers.map(dev => (
                   <div class="flex items-center justify-between border-b py-2 last:border-b-0">
                     <div class="flex items-center gap-3">
-                      {dev.avatar && (
-                        <img
-                          src={dev.avatar}
-                          alt={dev.name}
-                          class="h-10 w-10 rounded-full object-cover"
-                        />
-                      )}
+                      <ProfileAvatar
+                        src={dev.avatar}
+                        name={dev.name}
+                        username={dev.username}
+                        size={40}
+                        client:load
+                      />
                       <div>
                         <p class="font-medium">{dev.name}</p>
                         <p class="text-muted-foreground text-sm">
@@ -160,13 +177,16 @@ const verifiedDevelopers = await getVerifiedDevelopers(supabase);
                         </p>
                       </div>
                     </div>
-                    <button
-                      data-action="revoke"
-                      data-id={dev.id}
-                      class="text-destructive text-sm hover:underline"
+                    <ActionButton
+                      action="revoke"
+                      developerId={dev.id}
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      client:load
                     >
                       Revoke
-                    </button>
+                    </ActionButton>
                   </div>
                 ))
               }
@@ -176,52 +196,4 @@ const verifiedDevelopers = await getVerifiedDevelopers(supabase);
       </div>
     </div>
   </div>
-
-  <script>
-    import { getSupabaseBrowserClient } from "../../lib/supabase/browserClient";
-
-    const supabase = getSupabaseBrowserClient();
-
-    // Logout handler
-    document
-      .getElementById("logout-btn")
-      ?.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        window.location.href = "/admin/login";
-      });
-
-    // Approve/Reject/Revoke handlers
-    document.addEventListener("click", async e => {
-      const target = e.target as HTMLElement;
-      const action = target.getAttribute("data-action");
-      const developerId = target.getAttribute("data-id");
-
-      if (!action || !developerId) return;
-
-      const confirmed = confirm(
-        `Are you sure you want to ${action} this developer?`
-      );
-      if (!confirmed) return;
-
-      try {
-        const response = await fetch("/api/admin/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            developerId,
-            action,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to update developer");
-        }
-
-        // Reload page to reflect changes
-        window.location.reload();
-      } catch (error: any) {
-        alert(error.message || "Failed to update developer");
-      }
-    });
-  </script>
 </MainLayout>

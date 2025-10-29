@@ -305,60 +305,62 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         />
       </div>
 
-      <div>
-        <label htmlFor="github" className="mb-2 block text-sm font-medium">
-          GitHub URL
-        </label>
-        <input
-          type="url"
-          id="github"
-          name="github"
-          defaultValue={developer.github || ""}
-          placeholder="https://github.com/username"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="github" className="mb-2 block text-sm font-medium">
+            GitHub URL
+          </label>
+          <input
+            type="url"
+            id="github"
+            name="github"
+            defaultValue={developer.github || ""}
+            placeholder="https://github.com/username"
+            className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+          />
+        </div>
 
-      <div>
-        <label htmlFor="linkedin" className="mb-2 block text-sm font-medium">
-          LinkedIn URL
-        </label>
-        <input
-          type="url"
-          id="linkedin"
-          name="linkedin"
-          defaultValue={developer.linkedin || ""}
-          placeholder="https://linkedin.com/in/username"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
-        />
-      </div>
+        <div>
+          <label htmlFor="linkedin" className="mb-2 block text-sm font-medium">
+            LinkedIn URL
+          </label>
+          <input
+            type="url"
+            id="linkedin"
+            name="linkedin"
+            defaultValue={developer.linkedin || ""}
+            placeholder="https://linkedin.com/in/username"
+            className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+          />
+        </div>
 
-      <div>
-        <label htmlFor="telegram" className="mb-2 block text-sm font-medium">
-          Telegram
-        </label>
-        <input
-          type="text"
-          id="telegram"
-          name="telegram"
-          defaultValue={developer.telegram || ""}
-          placeholder="https://t.me/username or @username"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
-        />
-      </div>
+        <div>
+          <label htmlFor="telegram" className="mb-2 block text-sm font-medium">
+            Telegram
+          </label>
+          <input
+            type="text"
+            id="telegram"
+            name="telegram"
+            defaultValue={developer.telegram || ""}
+            placeholder="https://t.me/username or @username"
+            className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+          />
+        </div>
 
-      <div>
-        <label htmlFor="website" className="mb-2 block text-sm font-medium">
-          Website
-        </label>
-        <input
-          type="url"
-          id="website"
-          name="website"
-          defaultValue={developer.website || ""}
-          placeholder="https://yourwebsite.com"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
-        />
+        <div>
+          <label htmlFor="website" className="mb-2 block text-sm font-medium">
+            Website
+          </label>
+          <input
+            type="url"
+            id="website"
+            name="website"
+            defaultValue={developer.website || ""}
+            placeholder="https://yourwebsite.com"
+            className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
+          />
+        </div>
       </div>
 
       <div>

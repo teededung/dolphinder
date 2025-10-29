@@ -118,14 +118,6 @@ function formatTelegramLink(telegram: string | null): string {
 <MainLayout title="Dashboard">
   <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
-      <div class="mb-8 flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-bold">Dashboard</h1>
-          <p class="text-muted-foreground mt-1">{user.email}</p>
-        </div>
-        <LogoutButton client:load />
-      </div>
-
       {
         isWelcome && (
           <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">

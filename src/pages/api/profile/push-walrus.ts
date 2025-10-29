@@ -56,8 +56,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Extract blobId from profileData (already uploaded to Walrus by client)
+    // Extract blobId and blobObjectId from profileData (already uploaded to Walrus by client)
     const blobId = profileData.blobId;
+    const blobObjectId = profileData.blobObjectId; // Sui object ID from Walrus upload response
+    
     if (!blobId || typeof blobId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Invalid blobId in profileData' }),
@@ -65,10 +67,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Update Supabase with blob_id
+    // Update Supabase with both blob_id and blob_object_id
+    const updateData: any = { walrus_blob_id: blobId };
+    if (blobObjectId && typeof blobObjectId === 'string') {
+      updateData.blob_object_id = blobObjectId;
+      console.log('[push-walrus] Saving blob_object_id for metadata queries:', blobObjectId);
+    }
+    
     const { error: updateError } = await supabase
       .from('developers')
-      .update({ walrus_blob_id: blobId })
+      .update(updateData)
       .eq('id', developer.id);
 
     if (updateError) {

@@ -193,6 +193,16 @@ pnpm dev
 - Ensure `public/avatar/` directory has write permissions
 - Verify file type is supported (JPG, PNG, GIF, WebP)
 
+## 7. Walrus Integration (Optional)
+
+For on-chain storage with Walrus, see **[WALRUS_INTEGRATION.md](./WALRUS_INTEGRATION.md)** for:
+
+- Environment setup for Walrus/Sui
+- Smart contract deployment
+- User flow for pushing profiles on-chain
+- Storage metadata & expiry tracking
+- Troubleshooting guide
+
 ## Next Steps
 
-This completes the Web2 implementation. On-chain features (Walrus, Sui integration) will be added in a future phase.
+This completes the Web2 + Walrus on-chain integration. Platform is ready for production deployment!

@@ -24,11 +24,14 @@ pnpm install
 2. Click "New Project"
 3. Wait for provisioning
 
-### Run Migration
+### Run Migrations
 
 1. Go to SQL Editor in Supabase dashboard
-2. Copy contents of `supabase/migrations/001_initial_schema.sql`
-3. Paste and click "Run"
+2. Run migrations in order:
+   - `001_initial_schema.sql` (core tables)
+   - `002_add_walrus_blob_id.sql` (Walrus content hash)
+   - `003_add_blob_object_id.sql` (Sui object ID for metadata)
+3. Paste each and click "Run"
 
 ### Get Credentials
 
@@ -47,10 +50,24 @@ cp env.example .env
 Edit `.env`:
 
 ```env
+# Supabase
 PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+
+# Admin
 ADMIN_EMAILS=your-email@example.com
+
+# Walrus (Testnet)
+PUBLIC_WALRUS_PUBLISHER_URL=https://publisher.walrus-testnet.walrus.space
+PUBLIC_WALRUS_AGGREGATOR_URL=https://aggregator.walrus-testnet.walrus.space
+
+# Sui Network
+PUBLIC_SUI_NETWORK=testnet
+
+# Developer Registry Contract
+PUBLIC_REGISTRY_PACKAGE_ID=0xc6766915f7f8c8cf74821d9ee2f36bf089466782f4764373de31307ded80dfe5
+PUBLIC_REGISTRY_INDEX_ID=0x4eab69ce7c3e0865c3f89369e78ee0fa43e08fc2c45fa4fca8d75c636b6b9f7f
 ```
 
 ## Step 4: GitHub OAuth (2 min)
@@ -118,15 +135,19 @@ Open `http://localhost:4321`
 - Test the admin dashboard
 - Edit a developer profile
 - Upload an avatar
+- **🆕 Push profile to Walrus (on-chain storage)**
 
 ### Need Help?
 
 - Check `SETUP_GUIDE.md` for detailed instructions
 - Check `DEV_NOTES.md` for development tips
 - Check `ADMIN_SETUP.md` for admin configuration
+- **Check `WALRUS_INTEGRATION.md` for on-chain storage**
 
 ---
 
 **Total Time**: ~10 minutes
 **Difficulty**: Easy
 **Status**: Ready to code! 🚀
+
+**Features**: Web2 + Walrus On-chain Storage ✅

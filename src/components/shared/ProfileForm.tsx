@@ -165,7 +165,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
 
       // Step 2: Upload to Walrus
       setWalrusStep("🐋 Uploading to Walrus storage...");
-      const { blobId } = await uploadJson(profileData);
+      const { blobId, blobObjectId } = await uploadJson(profileData);
 
       // Step 3: Create transaction
       setWalrusStep("⚙️ Creating blockchain transaction...");
@@ -192,7 +192,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profileData: { blobId },
+          profileData: { blobId, blobObjectId },
           txDigest: exec.digest,
         }),
       });

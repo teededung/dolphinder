@@ -5,13 +5,17 @@
 
 export type WalrusUploadResponse = {
   blobId: string;
+  blobObjectId?: string; // Sui object ID of the Blob (for metadata queries)
 };
 
 /**
  * Upload a JSON-serializable object to Walrus Publisher.
  * Returns the content-addressed blobId string.
+ * 
+ * @param data - Data to upload
+ * @param epochs - Number of epochs to store (default: 2, ~2 days for testing)
  */
-export async function uploadJson(data: unknown): Promise<WalrusUploadResponse> {
+export async function uploadJson(data: unknown, epochs: number = 2): Promise<WalrusUploadResponse> {
   const PUBLISHER_URL = (import.meta as any).env?.PUBLIC_WALRUS_PUBLISHER_URL 
     ?? (typeof process !== 'undefined' ? (process as any).env?.WALRUS_PUBLISHER_URL : undefined);
   if (!PUBLISHER_URL) {
@@ -21,12 +25,12 @@ export async function uploadJson(data: unknown): Promise<WalrusUploadResponse> {
   const payload = typeof data === 'string' ? data : JSON.stringify(data);
 
   const base = String(PUBLISHER_URL).replace(/\/$/, '');
-  // According to Walrus docs, publisher write endpoint is usually /v1/blobs (PUT),
-  // but different providers may accept different content-types or verbs.
+  // According to Walrus docs, publisher write endpoint is /v1/blobs?epochs=<number>
+  // Epochs parameter specifies how long to store the blob
   const candidates: { url: string; method: 'PUT' | 'POST'; contentType?: string }[] = [
-    { url: `${base}/v1/blobs`, method: 'PUT', contentType: 'application/octet-stream' },
-    { url: `${base}/v1/blobs`, method: 'PUT', contentType: 'text/plain' },
-    { url: `${base}/v1/blobs`, method: 'POST', contentType: 'application/octet-stream' },
+    { url: `${base}/v1/blobs?epochs=${epochs}`, method: 'PUT', contentType: 'application/octet-stream' },
+    { url: `${base}/v1/blobs?epochs=${epochs}`, method: 'PUT', contentType: 'text/plain' },
+    { url: `${base}/v1/blobs?epochs=${epochs}`, method: 'POST', contentType: 'application/octet-stream' },
   ];
 
   const errors: string[] = [];
@@ -44,17 +48,23 @@ export async function uploadJson(data: unknown): Promise<WalrusUploadResponse> {
       }
       const out = await res.json().catch(() => ({} as any));
       // Try multiple shapes:
-      // { blobId } | { id } | { newlyCreated: { blobObject: { blobId }}}
+      // { blobId } | { id } | { newlyCreated: { blobObject: { blobId, id }}}
       let blobId: string | undefined =
         out.blobId || out.blob_id || out.id || out.hash || out.blob || out.result;
+      let blobObjectId: string | undefined;
+      
       if (!blobId && out?.newlyCreated?.blobObject?.blobId) {
         blobId = out.newlyCreated.blobObject.blobId;
+        blobObjectId = out.newlyCreated.blobObject.id; // Sui object ID
       }
+      
       if (!blobId || typeof blobId !== 'string') {
         errors.push(`${c.method} ${c.url} -> missing blobId field`);
         continue;
       }
-      return { blobId };
+      
+      console.log('[Walrus Upload] Success:', { blobId, blobObjectId });
+      return { blobId, blobObjectId };
     } catch (e: any) {
       errors.push(`${c.method} ${c.url} -> ${String(e?.message || e)}`);
       continue;

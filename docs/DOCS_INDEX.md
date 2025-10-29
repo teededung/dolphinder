@@ -36,59 +36,19 @@ Welcome to Dolphinder platform documentation! Choose the guide that fits your ne
   - Debugging tips
   - Useful commands
 
-## 🚢 Deployment
-
-- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)**
-  - Pre-deployment checklist
-  - Platform-specific instructions
-  - Post-deployment verification
-  - Rollback plan
-
-## 📊 Project Information
-
-- **[WEB2_IMPLEMENTATION.md](./WEB2_IMPLEMENTATION.md)**
-  - Feature overview
-  - Architecture details
-  - API documentation
-  - User flows
-  - Testing checklist
-
-- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)**
-  - Complete implementation summary
-  - Statistics and metrics
-  - Technology stack
-  - Quality checklist
-
-## 📋 Project Management
-
-- **[DEVELOPER_MANAGEMENT.md](./DEVELOPER_MANAGEMENT.md)**
-  - Original developer management docs
-  - JSON-based workflow (legacy)
-
-## 🗺️ Quick Navigation
-
 ### I want to...
 
 **...set up the project for the first time**
 → Read [QUICKSTART.md](./QUICKSTART.md)
 
-**...understand the architecture**
-→ Read [WEB2_IMPLEMENTATION.md](./WEB2_IMPLEMENTATION.md)
+**...integrate Walrus on-chain storage**
+→ Read [WALRUS_INTEGRATION.md](./WALRUS_INTEGRATION.md)
 
 **...become an admin**
 → Read [ADMIN_SETUP.md](./ADMIN_SETUP.md)
 
-**...develop new features**
-→ Read [DEV_NOTES.md](./DEV_NOTES.md)
-
-**...deploy to production**
-→ Read [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
-
 **...troubleshoot issues**
-→ Read [SETUP_GUIDE.md](./SETUP_GUIDE.md) (Troubleshooting section)
-
-**...understand what was implemented**
-→ Read [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)
+→ Read [SETUP_GUIDE.md](./SETUP_GUIDE.md) or [WALRUS_INTEGRATION.md](./WALRUS_INTEGRATION.md#troubleshooting)
 
 ## 📂 Technical Documentation
 
@@ -161,15 +121,14 @@ Check the Troubleshooting sections in:
 
 ## 📅 Document Status
 
-| Document                  | Status      | Last Updated |
-| ------------------------- | ----------- | ------------ |
-| QUICKSTART.md             | ✅ Complete | 2025-10-26   |
-| SETUP_GUIDE.md            | ✅ Complete | 2025-10-26   |
-| ADMIN_SETUP.md            | ✅ Complete | 2025-10-26   |
-| DEV_NOTES.md              | ✅ Complete | 2025-10-26   |
-| DEPLOYMENT_CHECKLIST.md   | ✅ Complete | 2025-10-26   |
-| WEB2_IMPLEMENTATION.md    | ✅ Complete | 2025-10-26   |
-| IMPLEMENTATION_SUMMARY.md | ✅ Complete | 2025-10-26   |
+| Document                | Status      | Last Updated |
+| ----------------------- | ----------- | ------------ |
+| QUICKSTART.md           | ✅ Complete | 2025-10-29   |
+| SETUP_GUIDE.md          | ✅ Complete | 2025-10-29   |
+| ADMIN_SETUP.md          | ✅ Complete | 2025-10-26   |
+| DEV_NOTES.md            | ✅ Complete | 2025-10-26   |
+| DEPLOYMENT_CHECKLIST.md | ✅ Complete | 2025-10-26   |
+| WALRUS_INTEGRATION.md   | ✅ Complete | 2025-10-29   |
 
 ## 🎓 Learning Path
 
@@ -197,12 +156,21 @@ Check the Troubleshooting sections in:
 4. Follow deployment steps
 5. Monitor and maintain
 
+## 🐋 Walrus Integration
+
+- **[WALRUS_INTEGRATION.md](./WALRUS_INTEGRATION.md)** 🆕
+  - On-chain storage with Walrus
+  - Sui blockchain integration
+  - Storage metadata & expiry
+  - UI components & user flow
+  - Troubleshooting guide
+
 ## 🔄 Updates
 
-This documentation is complete for the Web2 phase. Future updates will be added for the on-chain phase (Walrus, Sui integration).
+This documentation covers both Web2 and Walrus on-chain integration.
 
 ---
 
-**Documentation Version**: 1.0
-**Project Phase**: Web2 Complete
-**Last Updated**: October 26, 2025
+**Documentation Version**: 2.0
+**Project Phase**: Web2 + Walrus Integration Complete
+**Last Updated**: October 29, 2025

@@ -166,24 +166,63 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
 
       // Step 1: Prepare data
       setWalrusStep("📦 Preparing profile data...");
+      
+      // Convert avatar to base64 for Walrus blob
+      let avatarBase64 = "";
+      if (developer.avatar && developer.avatar.startsWith('/avatar/')) {
+        // Existing local avatar - fetch and convert to base64
+        try {
+          const response = await fetch(developer.avatar);
+          const blob = await response.blob();
+          avatarBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch (err) {
+          console.warn('Failed to fetch existing avatar for Walrus:', err);
+          avatarBase64 = developer.avatar || ""; // Fallback to path
+        }
+      } else {
+        // External URL or no avatar
+        avatarBase64 = developer.avatar || "";
+      }
+      
       const profileData = {
         profile: {
           name: formData.get("name") as string,
           bio: (formData.get("bio") as string) || "",
+          entry: (formData.get("entry") as string) || "",
           github: (formData.get("github") as string) || "",
           linkedin: (formData.get("linkedin") as string) || "",
+          telegram: (formData.get("telegram") as string) || "",
           website: (formData.get("website") as string) || "",
-          avatar: (formData.get("avatar") as string) || developer.avatar || "",
+          avatar: avatarBase64, // Always base64 or URL for Walrus blob
         },
         projects: [],
         certificates: [],
       };
+
+      // Debug: Log blob content before upload
+      console.log('[Walrus Push] Profile Data to Upload:', {
+        ...profileData,
+        profile: {
+          ...profileData.profile,
+          avatar: avatarBase64 
+            ? `${avatarBase64.slice(0, 50)}... (length: ${avatarBase64.length} chars, type: ${avatarBase64.split(',')[0]})`
+            : 'No avatar',
+        }
+      });
 
       // Step 2: Upload to Walrus (this succeeds even if transaction is rejected later)
       setWalrusStep("🐋 Uploading to Walrus storage...");
       const uploadResult = await uploadJson(profileData);
       blobId = uploadResult.blobId;
       blobObjectId = uploadResult.blobObjectId;
+      
+      // Debug: Log upload result
+      console.log('[Walrus Push] Upload Success:', { blobId, blobObjectId });
 
       // Step 3: Create transaction
       setWalrusStep("⚙️ Creating blockchain transaction...");
@@ -216,7 +255,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         linkedin: (formData.get("linkedin") as string) || "",
         telegram: (formData.get("telegram") as string) || "",
         website: (formData.get("website") as string) || "",
-        avatar: (formData.get("avatar") as string) || "",
+        avatar: developer.avatar || "", // Keep existing avatar path
       };
       
       const response = await fetch("/api/profile/push-walrus", {
@@ -361,20 +400,6 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
             className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
           />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="avatar" className="mb-2 block text-sm font-medium">
-          Avatar URL
-        </label>
-        <input
-          type="url"
-          id="avatar"
-          name="avatar"
-          defaultValue={developer.avatar || ""}
-          placeholder="https://example.com/avatar.jpg"
-          className="bg-background focus:ring-primary w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2"
-        />
       </div>
 
       <div>

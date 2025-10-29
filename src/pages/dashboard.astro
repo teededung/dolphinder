@@ -1,10 +1,10 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
-import LogoutButton from "../components/shared/LogoutButton";
 import CopyButton from "../components/shared/CopyButton";
 import ProfileFormWrapper from "../components/shared/ProfileFormWrapper";
 import WalrusBadge from "../components/shared/WalrusBadge";
 import WalrusStorageInfo from "../components/dashboard/WalrusStorageInfo";
+import EditableAvatar from "../components/dashboard/EditableAvatar";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
 import { shortenAddress } from "../lib/utils";
@@ -156,16 +156,13 @@ function formatTelegramLink(telegram: string | null): string {
               </a>
             </div>
             <div class="space-y-4">
-              {
-                developer.avatar && (
-                  <img
-                    src={developer.avatar}
-                    alt={developer.name}
-                    class="mx-auto h-32 w-32 rounded-full object-cover"
-                  />
-                )
-              }
-              <div class="text-center">
+              <EditableAvatar
+                client:load
+                avatar={developer.avatar || undefined}
+                name={developer.name}
+                username={developer.username}
+              />
+              <div class="mt-4 text-center">
                 <h3 class="text-xl font-bold">{developer.name}</h3>
 
                 <!-- Username with Badge on same line -->

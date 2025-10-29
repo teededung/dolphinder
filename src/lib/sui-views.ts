@@ -19,7 +19,7 @@ const USERNAME_INDEX_ID = (import.meta as any).env.PUBLIC_USERNAME_INDEX_ID as s
 const client = new SuiClient({ url: RPC_URL });
 
 /**
- * devInspect call to get developer object ID by username using the on-chain view function.
+ * devInspect call to get developer object ID by username using the onchain view function.
  * Returns objectId as hex string or null if not found.
  */
 export async function getDevIdByUsername(username: string): Promise<string | null> {

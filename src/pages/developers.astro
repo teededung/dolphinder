@@ -1,7 +1,6 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
-import { Github, Linkedin, Globe } from "@lucide/astro";
-import { ProfileAvatar } from "../components/shared/ProfileAvatar";
+import DevelopersFilter from "../components/DevelopersFilter";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getVerifiedDevelopers } from "../lib/auth";
 
@@ -15,14 +14,15 @@ const dbDevelopers = await getVerifiedDevelopers(supabase);
 const developers = dbDevelopers.map(dev => ({
   name: dev.name,
   username: dev.username,
-  avatar: dev.avatar || '',
-  bio: dev.bio || '',
-  github: dev.github || '',
-  linkedin: dev.linkedin || '',
-  telegram: dev.telegram || '',
-  website: dev.website || '',
-  slushWallet: dev.slush_wallet || '',
-  entry: dev.entry || '',
+  avatar: dev.avatar || "",
+  bio: dev.bio || "",
+  github: dev.github || "",
+  linkedin: dev.linkedin || "",
+  telegram: dev.telegram || "",
+  website: dev.website || "",
+  slushWallet: dev.slush_wallet || "",
+  entry: dev.entry || "",
+  walrusBlobId: dev.walrus_blob_id || null,
 }));
 ---
 
@@ -30,102 +30,20 @@ const developers = dbDevelopers.map(dev => ({
   <div class="min-h-screen pt-20">
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
-      <div class="text-center mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold my-4">
+      <div class="mb-12 text-center">
+        <h1 class="my-4 text-4xl font-bold md:text-5xl">
           Welcome to Dolphinder Nation
         </h1>
-        <p class="text-xl text-white/80 mb-2">
-         The on-chain developer directory & showcases   
+        <p class="mb-2 text-xl text-white/80">
+          The onchain developer directory & showcases
         </p>
         <p class="text-white/60">
           {developers.length} talented developers and counting...
         </p>
       </div>
 
-      <!-- Developer Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {developers.map((dev) => (
-          <div
-            class="group block bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6     hover:bg-white/10 hover:border-blue-400/30 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
-            onclick={`window.location.href='/${dev.username}'`}
-          >
-            <!-- Avatar -->
-            <div class="flex justify-center mb-4">
-              <ProfileAvatar
-                src={dev.avatar}
-                name={dev.name}
-                username={dev.username}
-                className="rounded-full border-3 border-white/20 group-hover:border-blue-400/50 transition-all duration-300"
-                size={80}
-                client:load
-              />
-            </div>
-
-            <!-- Info -->
-            <div class="text-center">
-              <h3 class="font-semibold text-lg mb-1 group-hover:text-blue-300 transition-colors">
-                {dev.name}
-              </h3>
-              <p class="text-sm text-white/60 mb-3">@{dev.username}</p>
-              
-              {dev.bio && (
-                <p class="text-sm text-white/70 mb-4 line-clamp-2">
-                  {dev.bio}
-                </p>
-              )}
-
-              <!-- Social Links -->
-              <div class="flex justify-center space-x-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                <a 
-                  href={dev.github} 
-                  target="_blank" 
-                  class="text-white/60 hover:text-white transition-colors"
-                  onclick="event.stopPropagation()"
-                >
-                  <Github class="w-4 h-4" />
-                </a>
-                {dev.linkedin && (
-                  <a 
-                    href={dev.linkedin} 
-                    target="_blank" 
-                    class="text-white/60 hover:text-white transition-colors"
-                    onclick="event.stopPropagation()"
-                  >
-                    <Linkedin class="w-4 h-4" />
-                  </a>
-                )}
-                {dev.website && (
-                  <a 
-                    href={dev.website} 
-                    target="_blank" 
-                    class="text-white/60 hover:text-white transition-colors"
-                    onclick="event.stopPropagation()"
-                  >
-                    <Globe class="w-4 h-4" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <!-- Call to Action -->
-      <!-- <div class="text-center mt-16">
-        <div class="inline-block bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-8 border border-white/10">
-          <h3 class="text-2xl font-bold mb-4">Want to join our community?</h3>
-          <p class="text-white/70 mb-6">
-            Connect with amazing developers building the future of Web3
-          </p>
-          <a 
-            href="/community" 
-            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg font-semibold hover:from-purple-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105"
-          >
-            Join Community
-            <ExternalLink class="w-4 h-4 ml-2" />
-          </a>
-        </div>
-      </div> -->
+      <!-- Developers Filter Component -->
+      <DevelopersFilter developers={developers} client:load />
     </div>
   </div>
 </MainLayout>

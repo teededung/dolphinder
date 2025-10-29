@@ -75,7 +75,7 @@ export function ProjectForm({ username }: { username: string }) {
       });
       const out = await resp.json();
       if (!resp.ok) throw new Error(out?.error || 'Sponsor execute failed');
-      setMsg('Project added on-chain.');
+      setMsg('Project added onchain.');
     } catch (err: any) {
       setMsg(String(err?.message || err));
     } finally {
@@ -99,7 +99,7 @@ export function ProjectForm({ username }: { username: string }) {
           loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
         }
       >
-        {loading ? 'Saving...' : 'Add Project On-chain'}
+        {loading ? 'Saving...' : 'Add Project Onchainly'}
       </Button>
       {!account && (<div className="text-sm opacity-80">Please connect your wallet to add project.</div>)}
       {account && owner !== null && account.address.toLowerCase() !== owner.toLowerCase() && (

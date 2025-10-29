@@ -1,9 +1,10 @@
 ---
 import MainLayout from "../../components/MainLayout.astro";
 import ProfileCard from "../../components/shared/ProfileCard";
-import OnchainProfile from "../../components/onchain/OnchainProfile";
+import OnchainProfileWrapper from "../../components/onchain/OnchainProfileWrapper";
 import WelcomeBanner from "../../components/shared/profile/WelcomeBanner";
 import PendingVerificationBanner from "../../components/shared/profile/PendingVerificationBanner";
+import WalrusBadge from "../../components/shared/WalrusBadge";
 import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
 import { getDeveloperByUsername, getCurrentUser } from "../../lib/auth";
 
@@ -44,6 +45,7 @@ const dev = {
   website: developer.website || "",
   slushWallet: developer.slush_wallet || "",
   entry: developer.entry || "",
+  walrusBlobId: developer.walrus_blob_id || null,
 };
 ---
 
@@ -65,11 +67,11 @@ const dev = {
         <div
           class="relative rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
         >
-          <!-- Off-chain profile (shown immediately) -->
+          <!-- Offchain profile (shown immediately) -->
           <div id="static-profile">
             <ProfileCard
               client:only="react"
-              variant="offchain"
+              variant={dev.walrusBlobId ? "onchain" : "offchain"}
               name={dev.name}
               username={dev.username}
               avatar={dev.avatar}
@@ -83,9 +85,9 @@ const dev = {
             />
           </div>
 
-          <!-- On-chain profile overlay (loads in background) -->
+          <!-- Onchain profile overlay (loads in background) -->
           <div id="onchain-profile" style="display:none">
-            <OnchainProfile
+            <OnchainProfileWrapper
               client:only="react"
               username={dev.username}
               showEditButton={isOwner || undefined}

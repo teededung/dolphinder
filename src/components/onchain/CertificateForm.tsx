@@ -71,7 +71,7 @@ export function CertificateForm({ username }: { username: string }) {
       });
       const out = await resp.json();
       if (!resp.ok) throw new Error(out?.error || 'Sponsor execute failed');
-      setMsg('Certificate added on-chain.');
+      setMsg('Certificate added onchain.');
     } catch (err: any) {
       setMsg(String(err?.message || err));
     } finally {
@@ -97,7 +97,7 @@ export function CertificateForm({ username }: { username: string }) {
           loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
         }
       >
-        {loading ? 'Saving...' : 'Add Certificate On-chain'}
+        {loading ? 'Saving...' : 'Add Certificate Onchain'}
       </Button>
       {!account && (<div className="text-sm opacity-80">Please connect your wallet to add certificate.</div>)}
       {account && owner !== null && account.address.toLowerCase() !== owner.toLowerCase() && (

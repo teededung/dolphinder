@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
+import WalrusBadge from './WalrusBadge';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -42,26 +43,12 @@ export default function ProfileCard({
       )}
       {/* Badges */}
       <div className="flex justify-center gap-2">
-        {variant === 'onchain' ? (
-          <>
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-400/10 px-3 py-1 text-sm text-sky-300">
-              <img src="/sui-sui-logo.svg" alt="Sui" className="h-4 w-4" />
-              On-chain
-            </span>
-            {isVerified === true && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-                <Check className="h-4 w-4" />
-                Verified
-              </span>
-            )}
-          </>
-        ) : (
-          isOwner && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-400/10 px-3 py-1 text-sm text-orange-300">
-              <Database className="h-4 w-4" />
-              Off-chain
-            </span>
-          )
+        <WalrusBadge variant={variant} size="md" />
+        {variant === 'onchain' && isVerified === true && (
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
+            <Check className="h-4 w-4" />
+            Verified
+          </span>
         )}
       </div>
 

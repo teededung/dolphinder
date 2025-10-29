@@ -12,7 +12,7 @@ export default function DashboardClient({ username }: { username: string }) {
       {!account && (
         <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-yellow-200">
           <div className="flex items-center justify-between gap-4">
-            <p>Vui lòng kết nối ví để lưu dữ liệu on-chain.</p>
+            <p>Vui lòng kết nối ví để lưu dữ liệu onchain.</p>
             <div className="shrink-0"><ConnectBtn /></div>
           </div>
         </div>

@@ -124,7 +124,7 @@ export function OnchainProfileForm({ username }: { username: string }) {
       }
       const exec = await signAndExecute({ transaction: txForWallet });
       if (!(exec as any)?.digest) throw new Error('execute failed');
-      setMessage('Profile updated on-chain successfully (non-gasless).');
+      setMessage('Profile updated onchain successfully (non-gasless).');
       setInitialBlobId(blobId);
     } catch (err: any) {
       setMessage(String(err?.message || err));
@@ -179,7 +179,7 @@ export function OnchainProfileForm({ username }: { username: string }) {
           loading || !account || (owner !== null && account.address.toLowerCase() !== owner.toLowerCase())
         }
       >
-        {loading ? 'Saving...' : 'Save Profile On-chain'}
+        {loading ? 'Saving...' : 'Save Profile Onchainly'}
       </Button>
       {!account && (
         <div className="text-sm opacity-80">Please connect your wallet to save.</div>

@@ -32,7 +32,7 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
         setLoading(true);
         setError(null);
         
-        // Load on-chain data in background
+        // Load onchain data in background
         const devId = await getDevIdByUsername(username);
         if (!devId) {
           setData(null);
@@ -46,7 +46,7 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
         const verifiedFlag: boolean | undefined = typeof fields?.is_verified === 'boolean' ? fields.is_verified : undefined;
         const ownerAddr: string | undefined = typeof fields?.owner === 'string' ? fields.owner : undefined;
         
-        // walrus_blob_id is vector<u8> on-chain; decode to ASCII string
+        // walrus_blob_id is vector<u8> onchain; decode to ASCII string
         let blobId: string | undefined;
         const raw = fields?.walrus_blob_id;
         if (typeof raw === 'string') {
@@ -69,13 +69,13 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
         }
         
         const json = await fetchJson<OnchainData>(blobId);
-        console.log('[OnchainProfile] Loaded on-chain data:', json);
+        console.log('[OnchainProfile] Loaded onchain data:', json);
 
         setData(json);
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);
         
-        // Show on-chain profile and hide static profile with smooth transition
+        // Show onchain profile and hide static profile with smooth transition
         const staticEl = document.getElementById('static-profile');
         const onchainEl = document.getElementById('onchain-profile');
         
@@ -87,7 +87,7 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
           setTimeout(() => {
             staticEl.style.display = 'none';
             onchainEl.style.removeProperty('display');
-            // Fade in on-chain profile
+            // Fade in onchain profile
             onchainEl.style.opacity = '0';
             onchainEl.style.transition = 'opacity 0.3s ease-in';
             setTimeout(() => {
@@ -96,13 +96,13 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
           }, 300);
         }
 
-        // avatar from on-chain json
+        // avatar from onchain json
         const maybeAvatar = json?.profile?.avatar;
         if (typeof maybeAvatar === 'string' && maybeAvatar.length > 0) {
           setAvatar(maybeAvatar);
         }
       } catch (e: any) {
-        console.warn('[OnchainProfile] Failed to load on-chain data:', e?.message || e);
+        console.warn('[OnchainProfile] Failed to load onchain data:', e?.message || e);
         setError(String(e?.message || e));
         setIsVerified(null);
         // Keep showing static profile on error
@@ -119,6 +119,7 @@ export function OnchainProfile({ username, showEditButton }: { username: string;
     <ProfileCard
       variant="onchain"
       name={data.profile?.name}
+      username={username}
       avatar={avatar || undefined}
       bio={data.profile?.bio}
       github={data.profile?.github}

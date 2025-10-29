@@ -13,6 +13,7 @@ export interface Developer {
   bio: string | null;
   slush_wallet: string | null;
   entry: string | null;
+  walrus_blob_id: string | null;
   is_verified: boolean;
   created_at: string;
   updated_at: string;

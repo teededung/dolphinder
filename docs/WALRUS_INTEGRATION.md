@@ -165,7 +165,7 @@ async function uploadJson(data, epochs = 2) {
 
 ### Storage Duration
 
-- Default: **2 epochs** (~2 days on testnet)
+- Default: **3 epochs** (~3 days on testnet)
 - Configurable in `uploadJson()` function
 - Can be extended by re-pushing profile
 - Publisher must have sufficient WAL tokens

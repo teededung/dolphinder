@@ -13,9 +13,9 @@ export type WalrusUploadResponse = {
  * Returns the content-addressed blobId string.
  * 
  * @param data - Data to upload
- * @param epochs - Number of epochs to store (default: 2, ~2 days for testing)
+ * @param epochs - Number of epochs to store (default: 3 days, ~3 days for testing)
  */
-export async function uploadJson(data: unknown, epochs: number = 2): Promise<WalrusUploadResponse> {
+export async function uploadJson(data: unknown, epochs: number = 3): Promise<WalrusUploadResponse> {
   const PUBLISHER_URL = (import.meta as any).env?.PUBLIC_WALRUS_PUBLISHER_URL 
     ?? (typeof process !== 'undefined' ? (process as any).env?.WALRUS_PUBLISHER_URL : undefined);
   if (!PUBLISHER_URL) {

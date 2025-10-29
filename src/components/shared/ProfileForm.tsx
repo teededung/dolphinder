@@ -93,23 +93,34 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
     try {
       const formData = new FormData(e.currentTarget);
 
-      const response = await fetch("/api/profile/update", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to update profile");
-      }
-
-      setSuccess("Profile updated successfully!");
-
-      // If Walrus push is enabled, trigger it after successful profile update
+      // If Walrus push is enabled, push to Walrus FIRST (onchain), then save to Supabase
       if (enableWalrusPush && bindedWallet) {
-        await handleWalrusPush(formData);
+        try {
+          await handleWalrusPush(formData);
+          // handleWalrusPush will save everything to Supabase after successful transaction
+        } catch (walrusErr: any) {
+          // Walrus push failed (e.g., user rejected), nothing was saved
+          // Reset both loading states so user can try again
+          setLoading(false);
+          setWalrusLoading(false);
+          console.error("Walrus push failed:", walrusErr);
+          return; // Don't proceed, let user see the error and try again
+        }
       } else {
+        // No Walrus push, save directly to Supabase (offchain only)
+        const response = await fetch("/api/profile/update", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to update profile");
+        }
+
+        setSuccess("Profile updated successfully (offchain)!");
+        
         // Reload page after 1 second to show updated profile
         setTimeout(() => {
           window.location.reload();
@@ -123,6 +134,9 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
   }
 
   async function handleWalrusPush(formData: FormData) {
+    let blobId: string | undefined;
+    let blobObjectId: string | undefined;
+    
     try {
       setWalrusLoading(true);
       setWalrusError("");
@@ -165,9 +179,11 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         certificates: [],
       };
 
-      // Step 2: Upload to Walrus
+      // Step 2: Upload to Walrus (this succeeds even if transaction is rejected later)
       setWalrusStep("🐋 Uploading to Walrus storage...");
-      const { blobId, blobObjectId } = await uploadJson(profileData);
+      const uploadResult = await uploadJson(profileData);
+      blobId = uploadResult.blobId;
+      blobObjectId = uploadResult.blobObjectId;
 
       // Step 3: Create transaction
       setWalrusStep("⚙️ Creating blockchain transaction...");
@@ -181,41 +197,68 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         txForWallet = makeUpdateProfileTx({ devObjectId: devId, blobId, sender });
       }
 
-      // Step 4: Sign and execute
+      // Step 4: Sign and execute transaction
       setWalrusStep("✍️ Please sign the transaction in your wallet...");
       const exec = await signAndExecute({ transaction: txForWallet });
       if (!exec?.digest) {
         throw new Error("Transaction failed");
       }
 
-      // Step 5: Update database
-      setWalrusStep("💾 Updating database...");
+      // Step 5: Update database with ALL profile data (this is the ONLY save to Supabase)
+      setWalrusStep("💾 Saving profile to database...");
+      
+      // Extract all profile fields from formData
+      const profileFields = {
+        name: formData.get("name") as string,
+        bio: (formData.get("bio") as string) || "",
+        entry: (formData.get("entry") as string) || "",
+        github: (formData.get("github") as string) || "",
+        linkedin: (formData.get("linkedin") as string) || "",
+        telegram: (formData.get("telegram") as string) || "",
+        website: (formData.get("website") as string) || "",
+        avatar: (formData.get("avatar") as string) || "",
+      };
+      
       const response = await fetch("/api/profile/push-walrus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profileData: { blobId, blobObjectId },
+          walrusData: { blobId, blobObjectId },
+          profileFields,
           txDigest: exec.digest,
         }),
       });
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "Failed to update Walrus blob ID");
+        throw new Error(result.error || "Failed to save profile");
       }
 
       setWalrusStep("");
-      setWalrusSuccess("✅ Profile pushed to Walrus successfully!");
+      setWalrusSuccess("✅ Profile pushed to Walrus & saved successfully!");
       
-      // Reload page after 2 seconds to show onchain badge
+      // Reload page after 2 seconds to show onchain badge and updated profile
       setTimeout(() => {
         window.location.reload();
       }, 2000);
     } catch (err: any) {
       console.error("Walrus push error:", err);
-      setWalrusError(err.message || "Failed to push to Walrus");
+      
+      // Check if blob was uploaded but transaction was rejected
+      if (blobId && err.message && err.message.includes("rejected")) {
+        setWalrusError(
+          `⚠️ Blob uploaded to Walrus successfully (ID: ${blobId.slice(0, 12)}...) but transaction was rejected. ` +
+          `The blob exists on Walrus but is not linked to your profile on-chain. You can retry to link it.`
+        );
+      } else {
+        setWalrusError(err.message || "Failed to push to Walrus");
+      }
+      
       setWalrusStep("");
       setWalrusLoading(false);
+      
+      // Re-throw error so handleSubmit can catch it and reset loading state
+      throw err;
     }
   }
 
@@ -394,22 +437,27 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
 
       {/* Walrus Push Section */}
       <div className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-4">
-        <div className="mb-3 flex items-start gap-2">
-          <input
-            type="checkbox"
-            id="enableWalrusPush"
-            checked={enableWalrusPush}
-            onChange={(e) => setEnableWalrusPush(e.target.checked)}
-            disabled={!bindedWallet || loading || walrusLoading}
-            className="mt-1"
-          />
-          <label htmlFor="enableWalrusPush" className="flex-1 text-sm">
-            <span className="font-semibold">Push to Walrus (Onchain Storage)</span>
-            <p className="mt-1 text-xs text-white/70">
-              Store your profile on Sui blockchain for verifiability and censorship-resistance.
-              Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"}
-            </p>
-          </label>
+        <div className="mb-3 flex items-start gap-4">
+          <div className="flex flex-1 items-start gap-3">
+            <input
+              type="checkbox"
+              id="enableWalrusPush"
+              checked={enableWalrusPush}
+              onChange={(e) => setEnableWalrusPush(e.target.checked)}
+              disabled={!bindedWallet || loading || walrusLoading}
+              className="mt-1"
+            />
+            <label htmlFor="enableWalrusPush" className="flex-1 text-sm">
+              <span className="font-semibold">Push to Walrus (Onchain Storage)</span>
+              <p className="mt-1 text-xs text-white/70">
+                Store your profile on Sui blockchain for verifiability and censorship-resistance.
+                Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"}
+              </p>
+            </label>
+          </div>
+          <div className="flex w-[25%] items-center justify-center">
+            <img src="/walrus.svg" alt="Walrus" className="h-16 w-16 opacity-80" />
+          </div>
         </div>
 
         {developer.walrus_blob_id && (
@@ -420,14 +468,26 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         )}
 
         {walrusStep && (
-          <div className="mt-2 rounded-md bg-blue-50 border border-blue-400/30 p-2 text-xs text-blue-800">
-            <span className="flex items-center gap-2">
-              <svg className="h-3 w-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {walrusStep}
-            </span>
+          <div className="mt-2 space-y-2">
+            <div className="rounded-md bg-blue-50 border border-blue-400/30 p-2 text-xs text-blue-800">
+              <span className="flex items-center gap-2">
+                <svg className="h-3 w-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {walrusStep}
+              </span>
+            </div>
+            {(walrusStep.includes("Uploading to Walrus") || walrusStep.includes("Creating blockchain") || walrusStep.includes("sign the transaction")) && (
+              <div className="rounded-md bg-yellow-50 border border-yellow-400/30 p-2 text-xs text-yellow-800">
+                <span className="flex items-center gap-2">
+                  <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <strong>Please wait for wallet popup to appear</strong>
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -478,7 +538,10 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
             Saving...
           </span>
         ) : enableWalrusPush ? (
-          "💎 Save & Push to Walrus"
+          <span className="flex items-center justify-center gap-2">
+            <img src="/walrus.svg" alt="Walrus" className="h-5 w-5" />
+            Save & Push to Walrus
+          </span>
         ) : (
           "Save Changes"
         )}

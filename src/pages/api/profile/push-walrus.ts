@@ -38,11 +38,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Parse request body
     const body = await request.json();
-    const { profileData, txDigest } = body;
+    const { walrusData, profileFields, txDigest } = body;
 
-    if (!profileData || !txDigest) {
+    if (!walrusData || !profileFields || !txDigest) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: profileData, txDigest' }),
+        JSON.stringify({ error: 'Missing required fields: walrusData, profileFields, txDigest' }),
         { status: 400 }
       );
     }
@@ -56,19 +56,31 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Extract blobId and blobObjectId from profileData (already uploaded to Walrus by client)
-    const blobId = profileData.blobId;
-    const blobObjectId = profileData.blobObjectId; // Sui object ID from Walrus upload response
+    // Extract blobId and blobObjectId from walrusData (already uploaded to Walrus by client)
+    const blobId = walrusData.blobId;
+    const blobObjectId = walrusData.blobObjectId; // Sui object ID from Walrus upload response
     
     if (!blobId || typeof blobId !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid blobId in profileData' }),
+        JSON.stringify({ error: 'Invalid blobId in walrusData' }),
         { status: 400 }
       );
     }
 
-    // Update Supabase with both blob_id and blob_object_id
-    const updateData: any = { walrus_blob_id: blobId };
+    // Prepare update data with Walrus info and profile fields
+    const updateData: any = { 
+      walrus_blob_id: blobId,
+      // Update all profile fields
+      name: profileFields.name?.trim() || developer.name,
+      bio: profileFields.bio?.trim() || null,
+      entry: profileFields.entry?.trim() || null,
+      github: profileFields.github?.trim() || null,
+      linkedin: profileFields.linkedin?.trim() || null,
+      telegram: profileFields.telegram?.trim() || null,
+      website: profileFields.website?.trim() || null,
+      avatar: profileFields.avatar?.trim() || null,
+    };
+    
     if (blobObjectId && typeof blobObjectId === 'string') {
       updateData.blob_object_id = blobObjectId;
       console.log('[push-walrus] Saving blob_object_id for metadata queries:', blobObjectId);

@@ -2,15 +2,23 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import type { Project } from '../../types/project';
-import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 
 interface ProjectsManagerProps {
   initialProjects: any[];
   onProjectsChange?: (projects: Project[]) => void;
 }
 
-const DEFAULT_TAGS = ['React', 'Sui', 'Walrus', 'TypeScript', 'JavaScript', 'Next.js', 'Astro', 'Solidity', 'Move', 'Web3'];
+const DEFAULT_TAGS = ['React', 'Sui', 'Walrus', 'TypeScript', 'Tailwind', 'Next.js', 'Astro', 'Solidity', 'Move', 'Web3'];
 
 // Normalize projects from database to ensure they match Project type
 function normalizeProjects(rawProjects: any[]): Project[] {
@@ -76,6 +84,8 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImages, setPreviewImages] = useState<Map<number, string>>(new Map()); // Store blob URLs for preview
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   // Initialize editing mode
   const startEdit = (project: Project) => {
@@ -303,21 +313,64 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  // Delete project
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) {
-      return;
-    }
+  // Open delete confirmation dialog
+  const openDeleteDialog = (project: Project) => {
+    setProjectToDelete(project);
+    setDeleteDialogOpen(true);
+  };
+
+  // Delete project (called after confirmation)
+  const handleDelete = async () => {
+    if (!projectToDelete) return;
 
     setLoading(true);
     setError('');
+    setDeleteDialogOpen(false);
 
-    const updatedProjects = projects.filter(p => p.id !== id);
+    // Save original projects for potential revert
+    const originalProjects = [...projects];
+    const updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
+    
+    // Update local state immediately for better UX
     setProjects(updatedProjects);
     onProjectsChange?.(updatedProjects);
-    setLoading(false);
-    setSuccess('Project deleted successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+    
+    // Save to database immediately after deletion
+    try {
+      const response = await fetch('/api/profile/update-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updatedProjects }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete project from database');
+      }
+
+      setSuccess('Project deleted successfully!');
+      
+      // Delete associated images from server (optional cleanup)
+      if (projectToDelete.images && projectToDelete.images.length > 0) {
+        // Note: Images are in /public/projects/ and will remain for now
+        // Can be cleaned up later if needed via cleanup script
+      }
+
+      // Reload page after 1.5 seconds to sync with database
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+      setProjectToDelete(null);
+    } catch (err: any) {
+      console.error('Error deleting project:', err);
+      // Revert state on error
+      setProjects(originalProjects);
+      onProjectsChange?.(originalProjects);
+      setError(err.message || 'Failed to delete project from database');
+      setLoading(false);
+    }
   };
 
   // Save to server
@@ -719,7 +772,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(project.id)}
+                      onClick={() => openDeleteDialog(project)}
                       disabled={loading || showForm}
                       className="gap-1 text-red-600 hover:text-red-700"
                     >
@@ -751,6 +804,67 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Delete Project
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {projectToDelete && (
+            <div className="my-4 rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-900 mb-1">{projectToDelete.name}</p>
+              {projectToDelete.description && (
+                <p className="text-xs text-red-700 line-clamp-2">{projectToDelete.description}</p>
+              )}
+              {projectToDelete.images && projectToDelete.images.length > 0 && (
+                <p className="text-xs text-red-600 mt-2">
+                  This will also remove {projectToDelete.images.length} associated image{projectToDelete.images.length > 1 ? 's' : ''}.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setProjectToDelete(null);
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+              className="gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Project
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -107,6 +107,77 @@ export function isExternalUrl(url: string): boolean {
 }
 
 /**
+ * Sanitize project ID for use in filename
+ */
+function sanitizeProjectId(projectId: string): string {
+  // Remove hyphens and take first 8 chars to keep filename short
+  const sanitized = projectId.replace(/-/g, '').slice(0, 8);
+  // Add random suffix to avoid collisions
+  const randomSuffix = Math.random().toString(36).substring(2, 6);
+  return `${sanitized}${randomSuffix}`;
+}
+
+/**
+ * Upload project image and save to public/projects/
+ * @param fileBuffer - File buffer
+ * @param filename - Original filename
+ * @param projectId - Project ID to use in saved filename
+ * @returns Local path to saved image
+ */
+export async function uploadProjectImage(
+  fileBuffer: Buffer,
+  filename: string,
+  projectId: string
+): Promise<string> {
+  try {
+    const ext = path.extname(filename).toLowerCase().replace('.', '') || 'png';
+    const timestamp = Date.now();
+    // Sanitize projectId to avoid long filenames
+    const sanitizedId = sanitizeProjectId(projectId);
+    const newFilename = `${sanitizedId}-${timestamp}.${ext}`;
+    
+    const publicDir = path.join(__dirname, '../../public/projects');
+    const filePath = path.join(publicDir, newFilename);
+
+    // Ensure directory exists
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+
+    // Save file
+    fs.writeFileSync(filePath, fileBuffer);
+
+    return `/projects/${newFilename}`;
+  } catch (error) {
+    console.error(`Error uploading project image for ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete project image file
+ * @param imagePath - Path to image file (e.g., /projects/projectId-timestamp.png)
+ */
+export function deleteProjectImage(imagePath: string): void {
+  try {
+    if (!imagePath || !imagePath.startsWith('/projects/')) {
+      return;
+    }
+
+    const filename = path.basename(imagePath);
+    const publicDir = path.join(__dirname, '../../public/projects');
+    const filePath = path.join(publicDir, filename);
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (error) {
+    console.error(`Error deleting project image ${imagePath}:`, error);
+    // Don't throw - deleting old image is not critical
+  }
+}
+
+/**
  * Get file extension from content type
  */
 function getExtensionFromContentType(contentType: string): string {

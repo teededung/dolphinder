@@ -1,16 +1,10 @@
-import { Github, Linkedin, Globe, Database, Check, Send, Briefcase, Award } from 'lucide-react';
+import { Github, Linkedin, Globe, Database, Check, Send, Briefcase, Award, ExternalLink, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
 import WalrusBadge from './WalrusBadge';
-
-type Project = {
-  name: string;
-  description?: string;
-  url?: string;
-  technologies?: string[];
-};
+import type { Project } from '../../types/project';
 
 type Certificate = {
   name: string;
@@ -162,38 +156,118 @@ export default function ProfileCard({
             Projects ({projects.length})
           </h3>
           <div className="space-y-3">
-            {projects.map((project, index) => (
-              <div key={index} className="bg-black/20 rounded-lg p-3 border border-white/5">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-semibold text-white">{project.name}</h4>
-                  {project.url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="shrink-0 h-7 px-2 text-xs"
-                      onClick={() => window.open(project.url, '_blank')}
-                    >
-                      View
-                    </Button>
-                  )}
-                </div>
-                {project.description && (
-                  <p className="text-sm text-white/60 mt-1">{project.description}</p>
-                )}
-                {project.technologies && project.technologies.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {project.technologies.map((tech, techIndex) => (
-                      <span
-                        key={techIndex}
-                        className="inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-300"
-                      >
-                        {tech}
-                      </span>
-                    ))}
+            {projects.map((project, index) => {
+              // Handle both old format (simple object) and new format (Project type)
+              const isNewFormat = 'id' in project || 'tags' in project || 'status' in project;
+              const projectName = project.name || '';
+              const projectDescription = project.description || '';
+              const repoUrl = isNewFormat ? (project as Project).repoUrl : undefined;
+              const demoUrl = isNewFormat ? (project as Project).demoUrl : undefined;
+              const images = isNewFormat ? ((project as Project).images || []) : [];
+              const tags = isNewFormat ? (project as Project).tags : (project as any).technologies || [];
+              const status = isNewFormat ? (project as Project).status : undefined;
+              const featured = isNewFormat ? (project as Project).featured : false;
+              const url = !isNewFormat ? (project as any).url : undefined;
+              
+              // Use images array
+              const allImages = images || [];
+
+              return (
+                <div 
+                  key={isNewFormat && 'id' in project ? project.id : index} 
+                  className={`bg-black/20 rounded-lg p-3 border ${
+                    featured ? 'border-yellow-400/50' : 'border-white/5'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-white">{projectName}</h4>
+                        {featured && (
+                          <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                        )}
+                        {status && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            status === 'active' ? 'bg-green-500/20 text-green-300' :
+                            status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
+                            'bg-yellow-500/20 text-yellow-300'
+                          }`}>
+                            {status}
+                          </span>
+                        )}
+                      </div>
+                      {projectDescription && (
+                        <p className="text-sm text-white/60 mt-1">{projectDescription}</p>
+                      )}
+                      {tags && tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {tags.map((tag: string, tagIndex: number) => (
+                            <span
+                              key={tagIndex}
+                              className="inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-300"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {(repoUrl || demoUrl || url) && (
+                        <div className="flex gap-2 mt-2">
+                          {repoUrl && (
+                            <a
+                              href={repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Repo
+                            </a>
+                          )}
+                          {demoUrl && (
+                            <a
+                              href={demoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Demo
+                            </a>
+                          )}
+                          {!repoUrl && !demoUrl && url && (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {allImages.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {allImages.slice(0, 5).map((img, imgIdx) => (
+                          <img
+                            key={imgIdx}
+                            src={img}
+                            alt={`${projectName} - ${imgIdx + 1}`}
+                            className="w-16 h-16 object-cover rounded-md border border-white/10"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

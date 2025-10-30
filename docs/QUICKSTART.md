@@ -140,7 +140,6 @@ Open `http://localhost:4321`
 ### Need Help?
 
 - Check `SETUP_GUIDE.md` for detailed instructions
-- Check `DEV_NOTES.md` for development tips
 - Check `ADMIN_SETUP.md` for admin configuration
 - **Check `WALRUS_INTEGRATION.md` for on-chain storage**
 

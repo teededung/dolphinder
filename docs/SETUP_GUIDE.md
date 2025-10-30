@@ -4,9 +4,39 @@ This guide will help you set up the Dolphinder developer platform with Supabase 
 
 ## Prerequisites
 
-- Node.js 18+ and pnpm installed
+- Node.js 18+ installed
+- pnpm package manager installed
 - Supabase account (free tier is fine)
 - GitHub account for OAuth setup
+
+### Installing pnpm
+
+If you don't have pnpm installed, you can install it using one of these methods:
+
+**Using npm:**
+
+```bash
+npm install -g pnpm
+```
+
+**Using Homebrew (macOS):**
+
+```bash
+brew install pnpm
+```
+
+**Using Corepack (recommended, built into Node.js 16.13+):**
+
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+Verify installation:
+
+```bash
+pnpm --version
+```
 
 ## 1. Supabase Project Setup
 
@@ -21,7 +51,11 @@ This guide will help you set up the Dolphinder developer platform with Supabase 
 1. Install Supabase CLI:
 
 ```bash
+# Using npm
 npm install -g supabase
+
+# Or using pnpm
+pnpm install -g supabase
 ```
 
 2. Link your project:
@@ -93,9 +127,14 @@ This will:
 ## 5. Install Dependencies and Run
 
 ```bash
+# Install all project dependencies
 pnpm install
+
+# Start development server
 pnpm dev
 ```
+
+**Note:** This project uses pnpm as the package manager. All commands in this guide use `pnpm`. If you prefer, you can use the equivalent npm/yarn commands, but pnpm is recommended for better performance and disk space usage.
 
 ## 6. Create Admin Account
 

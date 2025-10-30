@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import type { Project } from '../../types/project';
+import type { Project, ProjectImage } from '../../types/project';
 import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 
 interface ProjectsManagerProps {
@@ -21,10 +21,26 @@ interface ProjectsManagerProps {
 const DEFAULT_TAGS = ['React', 'Sui', 'Walrus', 'TypeScript', 'Tailwind', 'Next.js', 'Astro', 'Solidity', 'Move', 'Web3'];
 
 // Normalize projects from database to ensure they match Project type
+// Supports both old format (images: string[]) and new format (images: ProjectImage[])
 function normalizeProjects(rawProjects: any[]): Project[] {
   if (!Array.isArray(rawProjects)) return [];
   
   return rawProjects.map((p: any) => {
+    // Normalize images to support both old and new formats
+    const normalizedImages = Array.isArray(p.images) 
+      ? p.images.map((img: any) => {
+          // If it's already a ProjectImage object, keep it
+          if (typeof img === 'object' && img !== null && (img.localPath || img.quiltPatchId)) {
+            return img as ProjectImage;
+          }
+          // If it's a string (old format), convert to new format with localPath only
+          if (typeof img === 'string') {
+            return img; // Keep backward compatibility
+          }
+          return null;
+        }).filter(Boolean)
+      : [];
+
     // Check if it's already in new format
     if (p.id && p.name && p.description && p.status && Array.isArray(p.tags)) {
       return {
@@ -33,7 +49,8 @@ function normalizeProjects(rawProjects: any[]): Project[] {
         description: p.description,
         repoUrl: p.repoUrl || undefined,
         demoUrl: p.demoUrl || undefined,
-        images: Array.isArray(p.images) ? p.images : [],
+        images: normalizedImages,
+        walrusQuiltId: p.walrusQuiltId || undefined,
         tags: p.tags || [],
         status: p.status as Project['status'],
         featured: p.featured || false,
@@ -48,7 +65,8 @@ function normalizeProjects(rawProjects: any[]): Project[] {
       description: p.description || '',
       repoUrl: p.repoUrl || p.url || undefined,
       demoUrl: p.demoUrl || undefined,
-      images: Array.isArray(p.images) ? p.images : [],
+      images: normalizedImages,
+      walrusQuiltId: p.walrusQuiltId || undefined,
       tags: p.tags || p.technologies || [],
       status: (p.status || 'active') as Project['status'],
       featured: p.featured || false,
@@ -504,11 +522,27 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
               {/* Display uploaded images */}
               {formData.images && formData.images.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-2">
-                  {formData.images.map((imagePath, index) => {
-                    // Use preview blob URL if available, otherwise use server path
+                  {formData.images.map((image, index) => {
+                    // Support both old format (string) and new format (ProjectImage)
+                    const isProjectImage = typeof image === 'object';
+                    const quiltPatchId = isProjectImage ? image.quiltPatchId : undefined;
+                    
+                    // Reconstruct path from filename or use direct string
+                    let imagePath = '';
+                    if (typeof image === 'string') {
+                      imagePath = image;
+                    } else if (image.filename) {
+                      imagePath = `/projects/${image.filename}`;
+                    } else if (image.localPath) {
+                      imagePath = image.localPath; // Backward compatibility
+                    }
+                    
+                    // Priority: preview blob > reconstructed path
                     const previewUrl = previewImages.get(index);
                     const imgSrc = previewUrl || imagePath;
+                    
                     const isBlob = imagePath.startsWith('blob:');
+                    const hasQuiltPatch = !!quiltPatchId;
                     
                     return (
                       <div key={index} className="relative group">
@@ -520,29 +554,36 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                             </svg>
                           </div>
                         ) : (
-                          <img
-                            src={imgSrc}
-                            alt={`Project image ${index + 1}`}
-                            className="h-20 w-20 object-cover rounded-md border border-gray-300"
-                            onError={(e) => {
-                              console.error('Failed to load image:', imgSrc);
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              // Show placeholder
-                              const parent = target.parentElement;
-                              if (parent && !parent.querySelector('.image-error')) {
-                                const placeholder = document.createElement('div');
-                                placeholder.className = 'image-error h-20 w-20 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-400 text-xs';
-                                placeholder.textContent = 'Error';
-                                parent.appendChild(placeholder);
-                              }
-                            }}
-                            onLoad={() => {
-                              if (!isBlob) {
-                                console.log('Image loaded successfully:', imgSrc);
-                              }
-                            }}
-                          />
+                          <div className="relative">
+                            <img
+                              src={imgSrc}
+                              alt={`Project image ${index + 1}`}
+                              className="h-20 w-20 object-cover rounded-md border border-gray-300"
+                              onError={(e) => {
+                                console.error('Failed to load image:', imgSrc);
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                // Show placeholder
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.image-error')) {
+                                  const placeholder = document.createElement('div');
+                                  placeholder.className = 'image-error h-20 w-20 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-400 text-xs';
+                                  placeholder.textContent = 'Error';
+                                  parent.appendChild(placeholder);
+                                }
+                              }}
+                              onLoad={() => {
+                                if (!isBlob) {
+                                  console.log('Image loaded successfully:', imgSrc);
+                                }
+                              }}
+                            />
+                            {hasQuiltPatch && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
+                                Walrus
+                              </div>
+                            )}
+                          </div>
                         )}
                         <button
                           type="button"
@@ -710,17 +751,41 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     {/* Project Images */}
                     {project.images && project.images.length > 0 && (
                       <div className="flex gap-2 mb-3">
-                        {project.images.map((img, imgIdx) => (
-                          <img
-                            key={imgIdx}
-                            src={img}
-                            alt={`${project.name} - Image ${imgIdx + 1}`}
-                            className="h-16 w-16 object-cover rounded-md border border-gray-200"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ))}
+                        {project.images.map((img, imgIdx) => {
+                          // Support both old format (string) and new format (ProjectImage)
+                          const isProjectImage = typeof img === 'object';
+                          const quiltPatchId = isProjectImage ? img.quiltPatchId : undefined;
+                          
+                          // Reconstruct path from filename or use direct string
+                          let imgSrc = '';
+                          if (typeof img === 'string') {
+                            imgSrc = img;
+                          } else if (img.filename) {
+                            imgSrc = `/projects/${img.filename}`;
+                          } else if (img.localPath) {
+                            imgSrc = img.localPath; // Backward compatibility
+                          }
+                          
+                          const hasQuiltPatch = !!quiltPatchId;
+                          
+                          return (
+                            <div key={imgIdx} className="relative">
+                              <img
+                                src={imgSrc}
+                                alt={`${project.name} - Image ${imgIdx + 1}`}
+                                className="h-16 w-16 object-cover rounded-md border border-gray-200"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              {hasQuiltPatch && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
+                                  Walrus
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     

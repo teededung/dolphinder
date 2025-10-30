@@ -9,9 +9,11 @@ import {
 } from "../ui/dialog";
 import { Button } from "../shared/Button";
 import { fetchJson, uploadJson } from "../../lib/walrus";
+import { uploadQuilt, blobToBase64 } from "../../lib/walrus-quilt";
 import { getDevIdByUsername } from "../../lib/sui-views";
 import { makeUpdateProfileTx } from "../../lib/sui-tx";
 import type { Developer } from "../../lib/auth";
+import type { ProjectImage } from "../../types/project";
 import { useModalStore } from "../../store/useModalStore";
 
 interface CompareWalrusModalProps {
@@ -129,6 +131,83 @@ export default function CompareWalrusModal({
         avatarBase64 = developer.avatar || "";
       }
 
+      // Step 1.5: Upload project images to Quilts
+      setSyncStep("🖼️ Uploading project images to Walrus Quilts...");
+      const projectsWithQuilt = await Promise.all(
+        (developer.projects || []).map(async (project: any) => {
+          if (!project.images || project.images.length === 0) {
+            return project;
+          }
+
+          // Prepare images for quilt upload with size tracking
+          const imagesToUpload = await Promise.all(
+            project.images.map(async (img: any, idx: number) => {
+              const localPath = typeof img === 'string' ? img : img.localPath;
+              if (!localPath || !localPath.startsWith('/projects/')) {
+                return null;
+              }
+
+              try {
+                // Fetch image from local and convert to base64
+                const response = await fetch(localPath);
+                const blob = await response.blob();
+                const base64 = await blobToBase64(blob);
+
+                return {
+                  data: base64,
+                  identifier: `${project.id}_img${idx}`,
+                  size: blob.size,
+                  format: localPath.split('.').pop() || 'jpg'
+                };
+              } catch (err) {
+                console.warn(`Failed to fetch project image ${localPath}:`, err);
+                return null;
+              }
+            })
+          );
+
+          const validImages = imagesToUpload.filter(Boolean) as { data: string; identifier: string; size: number; format: string }[];
+          if (validImages.length === 0) {
+            return project;
+          }
+
+          try {
+            // Upload to quilt
+            const quiltResult = await uploadQuilt(validImages);
+
+            console.log(`[Quilt Upload] Project "${project.name}": ${validImages.length} images uploaded to quilt ${quiltResult.quiltId}`);
+
+            // Update project with quilt IDs (save filename only)
+            return {
+              ...project,
+              walrusQuiltId: quiltResult.quiltId,
+              images: project.images.map((img: any, idx: number) => {
+                const localPath = typeof img === 'string' ? img : img.filename ? `/projects/${img.filename}` : img.localPath;
+                const patchResult = quiltResult.patches.find(p => p.identifier === `${project.id}_img${idx}`);
+                const imageData = validImages.find(v => v.identifier === `${project.id}_img${idx}`);
+                
+                // Extract filename from path (e.g., "/projects/abc.jpg" -> "abc.jpg")
+                const filename = localPath ? localPath.split('/').pop() : undefined;
+                
+                return {
+                  filename: filename,              // Save only filename, not full path
+                  quiltPatchId: patchResult?.patchId || undefined,
+                  metadata: {
+                    size: imageData?.size || 0,
+                    format: imageData?.format || 'jpg',
+                    index: idx
+                  }
+                } as ProjectImage;
+              })
+            };
+          } catch (err) {
+            console.error(`Failed to upload quilt for project "${project.name}":`, err);
+            // Keep original project if quilt upload fails
+            return project;
+          }
+        })
+      );
+
       const profileData: ProfileData = {
         profile: {
           name: developer.name,
@@ -140,7 +219,7 @@ export default function CompareWalrusModal({
           website: developer.website || "",
           avatar: avatarBase64,
         },
-        projects: developer.projects || [],
+        projects: projectsWithQuilt, // Use updated projects with quilt IDs
         certificates: developer.certificates || [],
       };
 
@@ -320,7 +399,33 @@ export default function CompareWalrusModal({
           });
         
         const hasFieldDiff = fieldDifferences.some(Boolean);
-        const hasProjectsDiff = JSON.stringify(offchainData.projects) !== JSON.stringify(onchainData.projects);
+        
+        // Compare projects: check metadata and quiltPatchIds, ignore localPath differences
+        const hasProjectsDiff = (() => {
+          if (offchainData.projects.length !== onchainData.projects.length) {
+            return true;
+          }
+          
+          return offchainData.projects.some((offProj: any, idx: number) => {
+            const onProj = onchainData.projects[idx];
+            
+            // Compare basic fields
+            if (offProj.name !== onProj.name || 
+                offProj.description !== onProj.description ||
+                JSON.stringify(offProj.tags) !== JSON.stringify(onProj.tags)) {
+              return true;
+            }
+            
+            // Compare images: only check count, not content
+            // (offchain may have string paths, onchain has ProjectImage objects)
+            const offImages = offProj.images || [];
+            const onImages = onProj.images || [];
+            
+            // Only flag as different if image COUNT differs
+            return offImages.length !== onImages.length;
+          });
+        })();
+        
         const hasCertsDiff = JSON.stringify(offchainData.certificates) !== JSON.stringify(onchainData.certificates);
         
         console.log("Field differences (excluding avatar):", hasFieldDiff);

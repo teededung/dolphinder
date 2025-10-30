@@ -199,6 +199,73 @@ export default function ProfileCard({
                       {projectDescription && (
                         <p className="text-sm text-white/60 mt-1">{projectDescription}</p>
                       )}
+                      
+                      {/* Project Images */}
+                      {allImages.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {allImages.map((img: any, imgIdx: number) => {
+                            // Support both old format (string) and new format (ProjectImage)
+                            let imgSrc = '';
+                            let hasQuiltPatch = false;
+                            
+                            if (typeof img === 'string') {
+                              // Old format: direct path string
+                              imgSrc = img;
+                            } else {
+                              // New format: ProjectImage with filename
+                              hasQuiltPatch = !!img.quiltPatchId;
+                              
+                              // Reconstruct path from filename
+                              if (img.filename) {
+                                imgSrc = `/projects/${img.filename}`;
+                              } else if (img.localPath) {
+                                // Backward compatibility with old localPath field
+                                imgSrc = img.localPath;
+                              }
+                            }
+                            
+                            // Skip rendering if no valid image source
+                            if (!imgSrc) {
+                              // Show placeholder for quilt-backed images without filename
+                              if (hasQuiltPatch) {
+                                return (
+                                  <div key={imgIdx} className="relative">
+                                    <div className="h-16 w-16 flex items-center justify-center rounded-md border border-white/10 bg-white/5">
+                                      <span className="text-xs text-white/40">
+                                        {img.metadata?.format?.toUpperCase() || 'IMG'}
+                                      </span>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
+                                      Walrus
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                            
+                            return (
+                              <div key={imgIdx} className="relative">
+                                <img
+                                  src={imgSrc}
+                                  alt={`${projectName} - Image ${imgIdx + 1}`}
+                                  className="h-16 w-16 object-cover rounded-md border border-white/10"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                                {hasQuiltPatch && (
+                                  <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
+                                    Walrus
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
                       {tags && tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {tags.map((tag: string, tagIndex: number) => (
@@ -249,21 +316,6 @@ export default function ProfileCard({
                         </div>
                       )}
                     </div>
-                    {allImages.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {allImages.slice(0, 5).map((img, imgIdx) => (
-                          <img
-                            key={imgIdx}
-                            src={img}
-                            alt={`${projectName} - ${imgIdx + 1}`}
-                            className="w-16 h-16 object-cover rounded-md border border-white/10"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               );

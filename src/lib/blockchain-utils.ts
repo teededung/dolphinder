@@ -60,3 +60,20 @@ export function getWalrusAggregatorUrl(
   return `${baseUrl}/v1/blobs/${blobId}`;
 }
 
+/**
+ * Generate Walrus Quilt patch URL for direct access to a specific image in a quilt
+ * @param quiltId - The Walrus Quilt ID (not used for aggregator, only patchId matters)
+ * @param patchId - The quilt patch ID from Walrus response
+ * @returns Walrus aggregator URL for the specific patch
+ */
+export function getWalrusQuiltPatchUrl(quiltId: string, patchId: string): string {
+  // Use environment variable if available, otherwise use default testnet
+  const AGGREGATOR_URL = (import.meta as any).env?.PUBLIC_WALRUS_AGGREGATOR_URL;
+  
+  const baseUrl = AGGREGATOR_URL || 'https://aggregator.walrus-testnet.walrus.space';
+  
+  // Quilt patch IDs are accessed via /v1/{patchId} on aggregator
+  // The patchId already contains the quilt reference
+  return `${baseUrl}/v1/${encodeURIComponent(patchId)}`;
+}
+

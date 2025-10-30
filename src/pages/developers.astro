@@ -1,6 +1,6 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
-import DevelopersFilter from "../components/DevelopersFilter";
+import DevelopersList from "../components/DevelopersList";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getVerifiedDevelopers } from "../lib/auth";
 
@@ -44,8 +44,8 @@ const developers = dbDevelopers.map(dev => ({
         </p>
       </div>
 
-      <!-- Developers Filter Component -->
-      <DevelopersFilter developers={developers} client:load />
+      <!-- Developers List -->
+      <DevelopersList developers={developers} client:load />
     </div>
   </div>
 </MainLayout>

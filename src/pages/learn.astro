@@ -1,11 +1,139 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
+
+interface Resource {
+  title: string;
+  description: string;
+  category: string;
+  url: string;
+  icon: string;
+  featured?: boolean;
+}
+
+const resources: Resource[] = [
+  {
+    title: "Move Book",
+    description: "Comprehensive documentation about Move Language - a programming language designed for blockchain development",
+    category: "Move Language",
+    url: "https://move-book.com/",
+    icon: "📚",
+    featured: true,
+  },
+  {
+    title: "HackQuest - Sui Learning Track",
+    description: "Complete Sui learning track on HackQuest with certification upon completion. Learn Sui and Move with real-world projects",
+    category: "Sui & Move",
+    url: "https://www.hackquest.io/learning-track/Sui",
+    icon: "🎓",
+    featured: true,
+  },
+  {
+    title: "Let's Move Sui",
+    description: "Practical guide to get started with Sui blockchain. Perfect for beginners and experienced developers",
+    category: "Sui",
+    url: "https://letsmovesui.com/",
+    icon: "🚀",
+  },
+  {
+    title: "MetaSchool",
+    description: "Blockchain learning platform with courses from beginner to advanced levels",
+    category: "Blockchain",
+    url: "https://metaschool.so/",
+    icon: "💎",
+  },
+];
 ---
 
-<MainLayout title="Learn">
-  <div class="min-h-screen pt-20">
-    <div class="container mx-auto px-4 py-8">
-      <h1>Learn</h1>
+<MainLayout title="Learn - Dolphinder">
+  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-20">
+    <div class="container mx-auto px-4 py-12">
+      <!-- Header -->
+      <div class="mb-12 text-center">
+        <h1 class="mb-4 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+          Learn Move & Sui
+        </h1>
+        <p class="text-lg text-slate-300 max-w-2xl mx-auto">
+          Discover the best resources, courses, and guides to become a developer on Sui blockchain
+        </p>
+      </div>
+
+      <!-- Resources Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-12">
+        {resources.map((resource) => (
+          <div
+            class={`group relative overflow-hidden rounded-lg border transition-all duration-300 hover:scale-105 ${
+              resource.featured
+                ? "border-cyan-500/50 bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20"
+                : "border-slate-700 bg-slate-800/40 hover:border-slate-600 hover:shadow-lg hover:shadow-slate-700/20"
+            }`}
+          >
+            <!-- Gradient overlay -->
+            <div
+              class={`absolute inset-0 bg-gradient-to-r ${
+                resource.featured
+                  ? "from-cyan-500/10 to-blue-500/10"
+                  : "from-slate-600/5 to-slate-700/5"
+              } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+            ></div>
+
+            <div class="relative p-6 z-10">
+              <!-- Icon and Badge -->
+              <div class="flex items-start justify-between mb-4">
+                <div class="text-4xl">{resource.icon}</div>
+                {resource.featured && (
+                  <span class="inline-block px-3 py-1 text-xs font-semibold text-cyan-300 bg-cyan-900/50 rounded-full border border-cyan-700/50">
+                    ⭐ Featured
+                  </span>
+                )}
+              </div>
+
+              <!-- Title -->
+              <h2 class="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
+                {resource.title}
+              </h2>
+
+              <!-- Category Badge -->
+              <div class="mb-3">
+                <span class={`inline-block px-2 py-1 text-xs font-medium rounded-md ${
+                  resource.category.includes("Sui")
+                    ? "bg-cyan-900/30 text-cyan-300 border border-cyan-700/50"
+                    : resource.category.includes("Move")
+                    ? "bg-blue-900/30 text-blue-300 border border-blue-700/50"
+                    : "bg-violet-900/30 text-violet-300 border border-violet-700/50"
+                }`}>
+                  {resource.category}
+                </span>
+              </div>
+
+              <!-- Description -->
+              <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                {resource.description}
+              </p>
+
+              <!-- Link Arrow -->
+              <a href={resource.url} target="_blank" rel="noopener noreferrer" class="flex items-center text-cyan-400 text-sm font-medium hover:text-cyan-300">
+                <span>Learn More</span>
+                <svg
+                  class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Additional Info -->
+      <div class="bg-slate-800/30 border border-slate-700/50 rounded-lg p-8 text-center">
+        <h3 class="text-xl font-bold text-white mb-2">🎯 Ready to Get Started?</h3>
+        <p class="text-slate-300 mb-4">
+          Choose a resource above and begin your journey to becoming a Sui blockchain developer today!
+        </p>
+      </div>
     </div>
   </div>
 </MainLayout>

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
 import { getCurrentUser, getDeveloperProfile } from '../../../lib/auth';
 import { fetchJson } from '../../../lib/walrus';
-import { uploadAvatar, deleteOldAvatar } from '../../../lib/avatar';
+import { uploadAvatar, deleteOldAvatar } from '../../../lib/media-upload';
 import type { ProfileData } from '../../../types/developer';
 
 export const prerender = false;

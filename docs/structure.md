@@ -182,7 +182,7 @@ Thư viện tiện ích và helper functions:
 
 - **Utilities:**
   - `auth.ts` - Authentication utilities
-  - `avatar.ts` - Avatar handling
+  - `media-upload.ts` - Avatar and project image upload handling
   - `utils.ts` - General utilities
 
 ##### **`src/data/`**

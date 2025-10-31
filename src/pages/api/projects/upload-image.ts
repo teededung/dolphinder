@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
 import { getCurrentUser } from '../../../lib/auth';
-import { uploadProjectImage } from '../../../lib/avatar';
+import { uploadProjectImage } from '../../../lib/media-upload';
 
 export const prerender = false;
 

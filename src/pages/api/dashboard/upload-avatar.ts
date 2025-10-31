@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { uploadAvatar, deleteOldAvatar } from '../../../lib/avatar';
+import { uploadAvatar, deleteOldAvatar } from '../../../lib/media-upload';
 import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
 import { getCurrentUser, getDeveloperProfile } from '../../../lib/auth';
 

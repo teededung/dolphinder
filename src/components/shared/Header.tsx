@@ -9,6 +9,10 @@ import dolphinderLogo from "../../assets/dolphinder-logo.png";
 
 const navItems = [
   {
+    label: "About",
+    href: "/about",
+  },
+  {
     label: "Learn",
     href: "/learn",
   },

@@ -1,0 +1,10 @@
+---
+import MainLayout from "../components/MainLayout.astro";
+import AboutContent from "../components/about/AboutContent";
+
+export const prerender = false;
+---
+
+<MainLayout title="About - Dolphinder">
+  <AboutContent client:load />
+</MainLayout>

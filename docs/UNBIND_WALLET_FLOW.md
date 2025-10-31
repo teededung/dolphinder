@@ -7,6 +7,7 @@ This document describes the implementation of safe wallet unbinding that handles
 ## Problem
 
 When a user has pushed their profile to Walrus blockchain and wants to unbind their wallet, we need to:
+
 1. Warn them about the on-chain profile
 2. Clear database references
 3. Revert profile to off-chain mode
@@ -38,6 +39,7 @@ Reload page → Profile shows as "offchain"
 **File:** `src/components/shared/UnbindWarningModal.tsx`
 
 Features:
+
 - Shows warning about on-chain profile
 - Explains that blob reference will be cleared
 - Clears database references only
@@ -48,6 +50,7 @@ Features:
 **File:** `src/pages/api/profile/delete-walrus.ts`
 
 POST endpoint that:
+
 - Authenticates user
 - Verifies user has walrus_blob_id
 - Clears `slush_wallet`, `walrus_blob_id` and `blob_object_id` from Supabase
@@ -60,6 +63,7 @@ POST endpoint that:
 **File:** `src/components/shared/ProfileForm.tsx`
 
 Modified Unbind button logic:
+
 ```typescript
 onClick={() => {
   if (developer.walrus_blob_id && developer.blob_object_id) {
@@ -100,12 +104,14 @@ onClick={() => {
 ### Why We Don't Delete Blobs On-chain
 
 **Reasons for simplified approach:**
+
 1. **Ownership complexity:** Blob objects may be owned by Walrus system, not the user directly
 2. **Transaction errors:** Attempting to delete can cause "not signed by correct sender" errors
 3. **Immutable storage:** Walrus is designed for permanent storage - blobs persist regardless
 4. **User experience:** Simpler flow without wallet signatures and potential transaction failures
 
 **Our approach:**
+
 - Clear database references only (`walrus_blob_id` and `blob_object_id`)
 - Blob data remains on Walrus storage (immutable blockchain storage)
 - Profile shows as "offchain" after unbinding
@@ -157,4 +163,3 @@ onClick={() => {
 - [Walrus Integration Guide](./WALRUS_INTEGRATION.md)
 - [Walrus Operations Documentation](https://docs.wal.app/dev-guide/dev-operations.html)
 - [Setup Guide](./SETUP_GUIDE.md)
-

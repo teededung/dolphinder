@@ -7,7 +7,6 @@
 │   ├── QUICKSTART.md
 │   ├── SETUP_GUIDE.md
 │   ├── UNBIND_WALLET_FLOW.md
-│   ├── WALRUS_COSTS.md
 │   └── WALRUS_INTEGRATION.md
 ├── package.json
 ├── pnpm-lock.yaml
@@ -66,7 +65,6 @@ Chứa tất cả tài liệu hướng dẫn và mô tả:
 - `SETUP_GUIDE.md` - Hướng dẫn setup chi tiết
 - `ADMIN_SETUP.md` - Hướng dẫn setup cho admin
 - `WALRUS_INTEGRATION.md` - Tài liệu tích hợp Walrus storage
-- `WALRUS_COSTS.md` - Thông tin về chi phí Walrus
 - `UNBIND_WALLET_FLOW.md` - Tài liệu về flow unbind wallet
 
 #### **📦 `public/` - Static Assets**

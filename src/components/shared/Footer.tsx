@@ -1,3 +1,5 @@
+import { Send, Facebook } from 'lucide-react';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -34,12 +36,24 @@ export default function Footer() {
               Developers
             </a>
             <a
-              href="https://github.com/terrancrypt/dolphinder"
+              href="https://t.me/dolphinder"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-white/60 transition-colors hover:text-white/80"
+              className="flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white/80"
+              aria-label="Telegram"
             >
-              GitHub
+              <Send className="h-4 w-4" />
+              <span>Telegram</span>
+            </a>
+            <a
+              href="https://www.facebook.com/groups/688138073614433"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white/80"
+              aria-label="Facebook Group"
+            >
+              <Facebook className="h-4 w-4" />
+              <span>Facebook</span>
             </a>
           </div>
         </div>

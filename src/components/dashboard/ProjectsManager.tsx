@@ -18,7 +18,7 @@ interface ProjectsManagerProps {
   onProjectsChange?: (projects: Project[]) => void;
 }
 
-const DEFAULT_TAGS = ['React', 'Sui', 'Walrus', 'TypeScript', 'Tailwind', 'Next.js', 'Astro', 'Solidity', 'Move', 'Web3'];
+const DEFAULT_TAGS = ['React', 'TypeScript', 'Tailwind', 'Next.js', 'Web2', 'Web3', 'NFT', 'GameFi', 'DeFi', 'SocialFi', 'AI', 'Smart Contract', 'Solidity', 'Move', 'Sui', 'Solana', 'Ethereum'];
 
 // Normalize projects from database to ensure they match Project type
 // Supports both old format (images: string[]) and new format (images: ProjectImage[])

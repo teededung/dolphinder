@@ -34,12 +34,6 @@ export default function Footer() {
               Developers
             </a>
             <a
-              href="/community"
-              className="text-sm text-white/60 transition-colors hover:text-white/80"
-            >
-              Community
-            </a>
-            <a
               href="https://github.com/terrancrypt/dolphinder"
               target="_blank"
               rel="noopener noreferrer"

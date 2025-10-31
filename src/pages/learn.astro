@@ -28,6 +28,14 @@ const resources: Resource[] = [
     featured: true,
   },
   {
+    title: "Sui dApps with Move & React",
+    description: "Udemy course - Build real-world decentralized applications on Sui blockchain using Move language and React",
+    category: "Sui & Move",
+    url: "https://www.udemy.com/course/sui-dapps-with-move-react-build-real-projects/",
+    icon: "🎬",
+    featured: true,
+  },
+  {
     title: "Let's Move Sui",
     description: "Practical guide to get started with Sui blockchain. Perfect for beginners and experienced developers",
     category: "Sui",
@@ -35,11 +43,46 @@ const resources: Resource[] = [
     icon: "🚀",
   },
   {
+    title: "Cyfrin Updraft",
+    description: "High-quality Web3 security and smart contract development courses. Learn best practices for building secure blockchain applications",
+    category: "Web3 & Security",
+    url: "https://www.cyfrin.io/updraft",
+    icon: "🛡️",
+  },
+  {
+    title: "TerraCrypt Web3 Academy",
+    description: "Vietnamese Web3 learning platform with comprehensive courses on blockchain development and smart contracts",
+    category: "Web3",
+    url: "https://web3.terrancrypt.com/",
+    icon: "🌐",
+  },
+  {
     title: "MetaSchool",
     description: "Blockchain learning platform with courses from beginner to advanced levels",
     category: "Blockchain",
     url: "https://metaschool.so/",
     icon: "💎",
+  },
+  {
+    title: "freeCodeCamp - Full Stack Developer",
+    description: "Free comprehensive full-stack development curriculum. Master web development fundamentals before diving into blockchain",
+    category: "Full Stack",
+    url: "https://www.freecodecamp.org/learn/full-stack-developer/",
+    icon: "💻",
+  },
+  {
+    title: "F8 - Fullstack.edu.vn",
+    description: "Vietnamese platform for learning full-stack web development with hands-on projects and practical approach",
+    category: "Full Stack",
+    url: "https://fullstack.edu.vn/",
+    icon: "📖",
+  },
+  {
+    title: "Roadmap.sh",
+    description: "Interactive roadmaps, guides and educational content for developers. Plan your learning path effectively",
+    category: "Developer Roadmap",
+    url: "https://roadmap.sh/",
+    icon: "🗺️",
   },
 ];
 ---
@@ -58,7 +101,7 @@ const resources: Resource[] = [
       </div>
 
       <!-- Resources Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 max-w-7xl mx-auto">
         {resources.map((resource) => (
           <div
             class={`group relative overflow-hidden rounded-lg border transition-all duration-300 hover:scale-105 ${
@@ -99,6 +142,12 @@ const resources: Resource[] = [
                     ? "bg-cyan-900/30 text-cyan-300 border border-cyan-700/50"
                     : resource.category.includes("Move")
                     ? "bg-blue-900/30 text-blue-300 border border-blue-700/50"
+                    : resource.category.includes("Web3")
+                    ? "bg-purple-900/30 text-purple-300 border border-purple-700/50"
+                    : resource.category.includes("Full Stack")
+                    ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700/50"
+                    : resource.category.includes("Roadmap")
+                    ? "bg-amber-900/30 text-amber-300 border border-amber-700/50"
                     : "bg-violet-900/30 text-violet-300 border border-violet-700/50"
                 }`}>
                   {resource.category}

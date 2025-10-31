@@ -3,6 +3,7 @@ import MainLayout from "../components/MainLayout.astro";
 import DevelopersList from "../components/DevelopersList";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getVerifiedDevelopers } from "../lib/auth";
+import type { DeveloperProfile } from "../types/developer";
 
 export const prerender = false;
 
@@ -11,7 +12,7 @@ const supabase = createSupabaseServerClient(Astro.cookies as any);
 const dbDevelopers = await getVerifiedDevelopers(supabase);
 
 // Map database developers to display format
-const developers = dbDevelopers.map(dev => ({
+const developers: DeveloperProfile[] = dbDevelopers.map(dev => ({
   name: dev.name,
   username: dev.username,
   avatar: dev.avatar || "",

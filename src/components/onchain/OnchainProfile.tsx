@@ -4,6 +4,7 @@ import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
 import { fromBase64 } from '@mysten/bcs';
 import { fetchJson } from '../../lib/walrus';
 import ProfileCard from '../shared/ProfileCard.tsx';
+import type { Project } from '../../types/project';
 
 type OnchainData = {
   profile?: {
@@ -16,12 +17,7 @@ type OnchainData = {
     website?: string;
     avatar?: string;
   };
-  projects?: Array<{
-    name: string;
-    description?: string;
-    url?: string;
-    technologies?: string[];
-  }>;
+  projects?: Project[]; // Use Project type from project.ts
   certificates?: Array<{
     name: string;
     issuer?: string;
@@ -82,19 +78,6 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         
         const json = await fetchJson<OnchainData>(blobId);
         console.log('[OnchainProfile] Loaded onchain data:', json);
-        console.log('[OnchainProfile] Profile fields:', {
-          name: json?.profile?.name,
-          bio: json?.profile?.bio,
-          entry: json?.profile?.entry,
-          github: json?.profile?.github,
-          linkedin: json?.profile?.linkedin,
-          telegram: json?.profile?.telegram,
-          website: json?.profile?.website,
-          avatar: json?.profile?.avatar ? `${json.profile.avatar.slice(0, 50)}... (${json.profile.avatar.length} chars)` : 'none',
-        });
-        console.log('[OnchainProfile] Projects:', json?.projects?.length || 0);
-        console.log('[OnchainProfile] Certificates:', json?.certificates?.length || 0);
-
         setData(json);
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);

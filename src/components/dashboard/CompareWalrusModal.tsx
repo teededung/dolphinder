@@ -14,6 +14,7 @@ import { getDevIdByUsername } from "../../lib/sui-views";
 import { makeUpdateProfileTx } from "../../lib/sui-tx";
 import type { Developer } from "../../lib/auth";
 import type { ProjectImage } from "../../types/project";
+import type { ProfileData } from "../../types/developer";
 import { useModalStore } from "../../store/useModalStore";
 
 interface CompareWalrusModalProps {
@@ -22,21 +23,6 @@ interface CompareWalrusModalProps {
   walrusBlobId: string;
   blobObjectId: string;
   developer: Developer;
-}
-
-interface ProfileData {
-  profile: {
-    name: string;
-    bio: string;
-    entry: string;
-    github: string;
-    linkedin: string;
-    telegram: string;
-    website: string;
-    avatar: string;
-  };
-  projects: any[];
-  certificates: any[];
 }
 
 export default function CompareWalrusModal({

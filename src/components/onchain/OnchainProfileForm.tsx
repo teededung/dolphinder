@@ -6,19 +6,7 @@ import { uploadJson, fetchJson } from '../../lib/walrus';
 import { getDevIdByUsername } from '../../lib/sui-views';
 import { makeRegisterTx, makeUpdateProfileTx } from '../../lib/sui-tx';
 import { Button } from '../shared/Button';
-
-type ProfileData = {
-  profile: {
-    name?: string;
-    bio?: string;
-    github?: string;
-    linkedin?: string;
-    website?: string;
-    avatar?: string;
-  };
-  projects: any[];
-  certificates: any[];
-};
+import type { ProfileData } from '../../types/developer';
 
 const EMPTY: ProfileData = {
   profile: {

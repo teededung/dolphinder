@@ -6,6 +6,7 @@ import WelcomeBanner from "../../components/shared/profile/WelcomeBanner";
 import PendingVerificationBanner from "../../components/shared/profile/PendingVerificationBanner";
 import { createSupabaseServerClient } from "../../lib/supabase/serverClient";
 import { getDeveloperByUsername, getCurrentUser } from "../../lib/auth";
+import type { DeveloperProfile } from "../../types/developer";
 
 export const prerender = false;
 
@@ -33,7 +34,7 @@ if (!developer.is_verified && !isOwner) {
 const isWelcome = Astro.url.searchParams.get("welcome") === "true";
 
 // Map database structure to component props
-const dev = {
+const dev: DeveloperProfile = {
   name: developer.name,
   username: developer.username,
   avatar: developer.avatar || "",

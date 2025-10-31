@@ -6,14 +6,8 @@ import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
 import WalrusBadge from './WalrusBadge';
 import type { Project } from '../../types/project';
+import type { Certificate } from '../../types/certificate';
 import { Dialog, DialogContent } from '../ui/dialog';
-
-type Certificate = {
-  name: string;
-  issuer?: string;
-  date?: string;
-  url?: string;
-};
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';

@@ -3,23 +3,9 @@ import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
 import { getCurrentUser, getDeveloperProfile } from '../../../lib/auth';
 import { fetchJson } from '../../../lib/walrus';
 import { uploadAvatar, deleteOldAvatar } from '../../../lib/avatar';
+import type { ProfileData } from '../../../types/developer';
 
 export const prerender = false;
-
-interface ProfileData {
-  profile: {
-    name: string;
-    bio?: string;
-    entry?: string;
-    github?: string;
-    linkedin?: string;
-    telegram?: string;
-    website?: string;
-    avatar?: string;
-  };
-  projects?: any[];
-  certificates?: any[];
-}
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {

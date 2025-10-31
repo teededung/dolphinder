@@ -52,22 +52,28 @@ const dev: DeveloperUI = {
 ---
 
 <MainLayout title={`${dev.name} - Developer Profile`}>
-  <div class="min-h-screen pt-20">
-    <div class="container mx-auto px-4 py-8">
+  <div class="min-h-screen pt-24 pb-16">
+    <div class="container mx-auto px-6 sm:px-8 lg:px-12">
       <!-- Welcome Banner -->
-      {isWelcome && isOwner && <WelcomeBanner client:only="react" />}
+      {isWelcome && isOwner && (
+        <div class="mb-8 animate-fade-in">
+          <WelcomeBanner client:only="react" />
+        </div>
+      )}
 
       <!-- Pending Verification Banner -->
       {
         isOwner && developer && !developer.is_verified && !isWelcome && (
-          <PendingVerificationBanner client:only="react" />
+          <div class="mb-8 animate-fade-in">
+            <PendingVerificationBanner client:only="react" />
+          </div>
         )
       }
 
       <!-- Profile Card -->
-      <div class="mx-auto max-w-2xl">
+      <div class="mx-auto max-w-6xl">
         <div
-          class="relative rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
+          class="relative rounded-2xl border border-white/10 bg-white/5 p-10 sm:p-12 lg:p-16 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-2xl hover:shadow-purple-500/10"
         >
           {dev.walrusBlobId ? (
             <>
@@ -129,4 +135,21 @@ const dev: DeveloperUI = {
       </div>
     </div>
   </div>
+
+  <style>
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out;
+    }
+  </style>
 </MainLayout>

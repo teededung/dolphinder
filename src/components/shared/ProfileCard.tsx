@@ -56,148 +56,172 @@ export default function ProfileCard({
     setLightboxOpen(true);
   };
   return (
-    <div className="relative space-y-3">
-      {showEditButton && (
-        <div className="absolute top-0 right-0 z-10">
-          <EditButton />
-        </div>
-      )}
-      {/* Badges */}
-      {(variant === 'onchain' || (variant === 'offchain' && isOwner)) && (
-        <div className="flex justify-center gap-2">
-          {variant === 'onchain' && <WalrusBadge variant="onchain" size="md" />}
-          {variant === 'offchain' && isOwner && <WalrusBadge variant="offchain" size="md" />}
-          {variant === 'onchain' && isVerified === true && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-              <Check className="h-4 w-4" />
-              Verified
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Avatar */}
-      <div className="flex justify-center">
-        <ProfileAvatar
-          src={avatar}
-          name={name || username || 'User'}
-          username={username}
-          hasWalrus={variant === 'onchain'}
-          className="border-4 border-white/20 shadow"
-          size={160}
-        />
+    <div className="relative space-y-6">
+      {/* Top Right Corner - Edit Button and Badges */}
+      <div className="absolute top-0 right-0 z-10 flex items-start gap-2">
+        {/* Walrus Badge */}
+        {(variant === 'onchain' || (variant === 'offchain' && isOwner)) && (
+          <>
+            {variant === 'onchain' && <WalrusBadge variant="onchain" size="md" />}
+            {variant === 'offchain' && isOwner && <WalrusBadge variant="offchain" size="md" />}
+          </>
+        )}
+        {/* Edit Button */}
+        {showEditButton && <EditButton />}
       </div>
 
-      {/* Name + username */}
-      {name && <div className="text-2xl font-semibold">{name}</div>}
-      {username && <p className="text-xl text-white/60">@{username}</p>}
-      
-      {/* Level/Role Badge */}
-      {entry && (
-        <div className="flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-blue-400/10 px-3 py-1 text-sm text-blue-300">
-            <Briefcase className="h-3.5 w-3.5" />
-            {entry}
-          </span>
-        </div>
-      )}
-      
-      {bio && <p className="text-white/70 mb-8 leading-relaxed">{bio}</p>}
+      {/* Main Profile Section - Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* Left Column - Avatar */}
+        <div className="lg:col-span-4 flex flex-col items-center lg:items-start space-y-4">
+          <ProfileAvatar
+            src={avatar}
+            name={name || username || 'User'}
+            username={username}
+            hasWalrus={variant === 'onchain'}
+            className="border-4 border-white/20 shadow-2xl"
+            size={200}
+          />
 
-      {/* Social Links */}
-      {(github || linkedin || telegram || website) && (
-        <div className="flex justify-center flex-wrap gap-2 mb-8">
-          {github && (
-            <Button
-              variant="ghost"
-              className="bg-white/10 hover:bg-white/20 hover:scale-105"
-              onClick={() => window.open(github, '_blank')}
-            >
-              <Github className="w-5 h-5" />
-              GitHub
-            </Button>
-          )}
-          {linkedin && (
-            <Button
-              variant="ghost"
-              className="bg-white/10 hover:bg-white/20 hover:scale-105"
-              onClick={() => window.open(linkedin, '_blank')}
-            >
-              <Linkedin className="w-5 h-5" />
-              LinkedIn
-            </Button>
-          )}
-          {telegram && (
-            <Button
-              variant="ghost"
-              className="bg-white/10 hover:bg-white/20 hover:scale-105"
-              onClick={() => window.open(
-                telegram.startsWith('http') ? telegram : `https://t.me/${telegram.replace(/^@/, '')}`,
-                '_blank'
-              )}
-            >
-              <Send className="w-5 h-5" />
-              Telegram
-            </Button>
-          )}
-          {website && (
-            <Button
-              variant="ghost"
-              className="bg-white/10 hover:bg-white/20 hover:scale-105"
-              onClick={() => window.open(website, '_blank')}
-            >
-              <Globe className="w-5 h-5" />
-              Website
-            </Button>
-          )}
-        </div>
-      )}
-
-       {/* Wallet Address */}
-       {walletAddress && (
-        <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
-          <Button
-            variant="ghost"
-            className="w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-none"
-            onClick={() => setShowWalletQR(!showWalletQR)}
-          >
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-white/80" />
-              <span className="text-sm font-semibold text-white/80">Wallet Address</span>
+          {/* Verified Badge below avatar */}
+          {variant === 'onchain' && isVerified === true && (
+            <div className="w-full max-w-[200px]">
+              <span className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300 w-full">
+                <Check className="h-4 w-4" />
+                Verified
+              </span>
             </div>
-            {showWalletQR ? (
-              <ChevronUp className="h-4 w-4 text-white/60" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-white/60" />
-            )}
-          </Button>
-          
-          {showWalletQR && (
-            <div className="p-4 border-t border-white/10 space-y-4">
-              {/* QR Code */}
-              <div className="flex justify-center bg-white p-4 rounded-lg">
-                <QRCodeSVG
-                  value={walletAddress}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
+          )}
+
+          {/* Wallet Address - Compact Card */}
+          {walletAddress && (
+            <div className="relative w-full max-w-[200px]">
+              <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-3 hover:bg-white/5 rounded-none"
+                  onClick={() => setShowWalletQR(!showWalletQR)}
+                  title="Click to view QR code"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img 
+                      src="/sui-logo.svg" 
+                      alt="Sui wallet" 
+                      className="h-4 w-4 shrink-0 object-contain"
+                    />
+                    <span className="text-xs font-mono text-white/70 truncate">
+                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    </span>
+                  </div>
+                  {showWalletQR ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-white/60 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-white/60 shrink-0" />
+                  )}
+                </Button>
               </div>
               
-              {/* Wallet Address Text with Copy */}
-              <div className="flex items-center justify-between gap-3 bg-black/20 rounded-lg p-3">
-                <code className="font-mono text-sm text-white/70 break-all">{walletAddress}</code>
-                <CopyButton
-                  originText={walletAddress}
-                  variant="ghost"
-                  size="icon-sm"
-                  className="shrink-0"
-                />
-              </div>
+              {/* Absolute Dropdown for QR Code */}
+              {showWalletQR && (
+                <div className="w-64 bg-black/50 absolute top-full left-0 right-0 mt-2 rounded-lg border border-white/20 shadow-2xl shadow-black/50 p-4 space-y-3 z-20 animate-slideDown">
+                  {/* QR Code */}
+                  <div className="flex justify-center bg-white p-3 rounded-lg">
+                    <QRCodeSVG
+                      value={walletAddress}
+                      size={150}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                  
+                  {/* Wallet Address Text with Copy */}
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg p-2">
+                    <code className="font-mono text-xs text-white/90 break-all flex-1">{walletAddress}</code>
+                    <CopyButton
+                      originText={walletAddress}
+                      variant="ghost"
+                      size="icon-sm"
+                      className="shrink-0"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+
+        {/* Right Column - Metadata */}
+        <div className="lg:col-span-8 space-y-6 text-left">
+          {/* Name + username */}
+          <div className="space-y-2">
+            {name && <h1 className="text-4xl lg:text-5xl font-bold text-white">{name}</h1>}
+            <div className="flex items-center gap-3 flex-wrap">
+              {username && <p className="text-xl text-white/60">@{username}</p>}
+              {/* Level/Role Badge */}
+              {entry && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-blue-400/10 px-3 py-1.5 text-sm text-blue-300">
+                  <Briefcase className="h-3.5 w-3.5" />
+                  {entry}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bio */}
+          {bio && (
+            <p className="text-white/80 text-lg leading-relaxed max-w-3xl">{bio}</p>
+          )}
+
+          {/* Social Links */}
+          {(github || linkedin || telegram || website) && (
+            <div className="flex flex-wrap gap-3">
+              {github && (
+                <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 hover:scale-105 transition-all"
+                  onClick={() => window.open(github, '_blank')}
+                >
+                  <Github className="w-5 h-5" />
+                  GitHub
+                </Button>
+              )}
+              {linkedin && (
+                <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 hover:scale-105 transition-all"
+                  onClick={() => window.open(linkedin, '_blank')}
+                >
+                  <Linkedin className="w-5 h-5" />
+                  LinkedIn
+                </Button>
+              )}
+              {telegram && (
+                <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 hover:scale-105 transition-all"
+                  onClick={() => window.open(
+                    telegram.startsWith('http') ? telegram : `https://t.me/${telegram.replace(/^@/, '')}`,
+                    '_blank'
+                  )}
+                >
+                  <Send className="w-5 h-5" />
+                  Telegram
+                </Button>
+              )}
+              {website && (
+                <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 hover:scale-105 transition-all"
+                  onClick={() => window.open(website, '_blank')}
+                >
+                  <Globe className="w-5 h-5" />
+                  Website
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Projects Section */}
       {projects && projects.length > 0 && (

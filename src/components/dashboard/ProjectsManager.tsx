@@ -533,8 +533,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                       imagePath = image;
                     } else if (image.filename) {
                       imagePath = `/projects/${image.filename}`;
-                    } else if (image.localPath) {
-                      imagePath = image.localPath; // Backward compatibility
                     }
                     
                     // Priority: preview blob > reconstructed path
@@ -762,8 +760,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                             imgSrc = img;
                           } else if (img.filename) {
                             imgSrc = `/projects/${img.filename}`;
-                          } else if (img.localPath) {
-                            imgSrc = img.localPath; // Backward compatibility
                           }
                           
                           const hasQuiltPatch = !!quiltPatchId;

@@ -4,6 +4,7 @@ import type { WalrusBlobMetadata } from '../../lib/walrus-metadata';
 import { getSuiscanObjectUrl, getWalrusAggregatorUrl } from '../../lib/blockchain-utils';
 import type { Developer } from '../../lib/auth';
 import CompareWalrusModal from './CompareWalrusModal';
+import { Button } from '../ui/button';
 
 interface WalrusStorageInfoProps {
   blobMetadata: WalrusBlobMetadata;
@@ -94,13 +95,14 @@ export default function WalrusStorageInfo({
 
                 {/* Compare Button */}
                 <div className="mt-3 border-t border-emerald-400/10 pt-3">
-                  <button
+                  <Button
                     onClick={() => setShowCompareModal(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                    className="w-full bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-700"
+                    size="sm"
                   >
                     <GitCompare className="h-3.5 w-3.5" />
                     Compare to Walrus Onchain
-                  </button>
+                  </Button>
                 </div>
 
                 {/* External Links */}

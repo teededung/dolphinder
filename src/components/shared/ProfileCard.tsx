@@ -1,4 +1,4 @@
-import { Github, Linkedin, Globe, Database, Check, Send, Briefcase, Award, ExternalLink, Star } from 'lucide-react';
+import { Github, Linkedin, Globe, Database, Check, Send, Briefcase, Award, ExternalLink, Star, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useState } from 'react';
 import CopyButton from './CopyButton';
@@ -8,6 +8,7 @@ import WalrusBadge from './WalrusBadge';
 import type { Project } from '../../types/project';
 import type { Certificate } from '../../types/certificate';
 import { Dialog, DialogContent } from '../ui/dialog';
+import { QRCodeSVG } from 'qrcode.react';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -48,6 +49,7 @@ export default function ProfileCard({
 }: ProfileCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [showWalletQR, setShowWalletQR] = useState(false);
 
   const openLightbox = (src: string) => {
     setLightboxSrc(src);
@@ -147,6 +149,52 @@ export default function ProfileCard({
               <Globe className="w-5 h-5" />
               Website
             </Button>
+          )}
+        </div>
+      )}
+
+       {/* Wallet Address */}
+       {walletAddress && (
+        <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-none"
+            onClick={() => setShowWalletQR(!showWalletQR)}
+          >
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-white/80" />
+              <span className="text-sm font-semibold text-white/80">Wallet Address</span>
+            </div>
+            {showWalletQR ? (
+              <ChevronUp className="h-4 w-4 text-white/60" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-white/60" />
+            )}
+          </Button>
+          
+          {showWalletQR && (
+            <div className="p-4 border-t border-white/10 space-y-4">
+              {/* QR Code */}
+              <div className="flex justify-center bg-white p-4 rounded-lg">
+                <QRCodeSVG
+                  value={walletAddress}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              
+              {/* Wallet Address Text with Copy */}
+              <div className="flex items-center justify-between gap-3 bg-black/20 rounded-lg p-3">
+                <code className="font-mono text-sm text-white/70 break-all">{walletAddress}</code>
+                <CopyButton
+                  originText={walletAddress}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                />
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -605,21 +653,6 @@ export default function ProfileCard({
         </div>
       )}
 
-      {/* Wallet Address */}
-      {walletAddress && (
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-          <h3 className="text-sm font-semibold text-white/80 mb-2">Wallet Address</h3>
-          <div className="flex items-center justify-between gap-3 bg-black/20 rounded-lg p-3">
-            <code className="font-mono text-sm text-white/70 break-all">{walletAddress}</code>
-            <CopyButton
-              originText={walletAddress}
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0"
-            />
-          </div>
-        </div>
-      )}
     {/* Lightbox Dialog */}
     <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 bg-black/90 border-white/10">

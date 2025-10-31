@@ -128,14 +128,15 @@ export default function CompareWalrusModal({
           // Prepare images for quilt upload with size tracking
           const imagesToUpload = await Promise.all(
             project.images.map(async (img: any, idx: number) => {
-              const localPath = typeof img === 'string' ? img : img.localPath;
-              if (!localPath || !localPath.startsWith('/projects/')) {
+              // Get image path: string (old format) or reconstruct from filename (new format)
+              const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
+              if (!imgPath || !imgPath.startsWith('/projects/')) {
                 return null;
               }
 
               try {
                 // Fetch image from local and convert to base64
-                const response = await fetch(localPath);
+                const response = await fetch(imgPath);
                 const blob = await response.blob();
                 const base64 = await blobToBase64(blob);
 
@@ -143,10 +144,10 @@ export default function CompareWalrusModal({
                   data: base64,
                   identifier: `${project.id}_img${idx}`,
                   size: blob.size,
-                  format: localPath.split('.').pop() || 'jpg'
+                  format: imgPath.split('.').pop() || 'jpg'
                 };
               } catch (err) {
-                console.warn(`Failed to fetch project image ${localPath}:`, err);
+                console.warn(`Failed to fetch project image ${imgPath}:`, err);
                 return null;
               }
             })
@@ -168,12 +169,13 @@ export default function CompareWalrusModal({
               ...project,
               walrusQuiltId: quiltResult.quiltId,
               images: project.images.map((img: any, idx: number) => {
-                const localPath = typeof img === 'string' ? img : img.filename ? `/projects/${img.filename}` : img.localPath;
+                // Get image path: string (old format) or reconstruct from filename (new format)
+                const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
                 const patchResult = quiltResult.patches.find(p => p.identifier === `${project.id}_img${idx}`);
                 const imageData = validImages.find(v => v.identifier === `${project.id}_img${idx}`);
                 
                 // Extract filename from path (e.g., "/projects/abc.jpg" -> "abc.jpg")
-                const filename = localPath ? localPath.split('/').pop() : undefined;
+                const filename = imgPath ? imgPath.split('/').pop() : undefined;
                 
                 return {
                   filename: filename,              // Save only filename, not full path
@@ -386,7 +388,7 @@ export default function CompareWalrusModal({
         
         const hasFieldDiff = fieldDifferences.some(Boolean);
         
-        // Compare projects: check metadata and quiltPatchIds, ignore localPath differences
+        // Compare projects: check count only, ignore image format/path differences
         const hasProjectsDiff = (() => {
           if (offchainData.projects.length !== onchainData.projects.length) {
             return true;

@@ -81,15 +81,6 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         setData(json);
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);
-        
-        // Show onchain profile and hide static profile instantly
-        const staticEl = document.getElementById('static-profile');
-        const onchainEl = document.getElementById('onchain-profile');
-        
-        if (staticEl && onchainEl) {
-          staticEl.style.display = 'none';
-          onchainEl.style.removeProperty('display');
-        }
 
         // avatar from onchain json
         const maybeAvatar = json?.profile?.avatar;
@@ -100,15 +91,35 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         console.warn('[OnchainProfile] Failed to load onchain data:', e?.message || e);
         setError(String(e?.message || e));
         setIsVerified(null);
-        // Keep showing static profile on error
+        
+        // Show offchain fallback on error
+        const staticEl = document.getElementById('static-profile');
+        const onchainEl = document.getElementById('onchain-profile');
+        
+        if (staticEl && onchainEl) {
+          onchainEl.style.display = 'none';
+          staticEl.style.removeProperty('display');
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, [username]);
 
-  // Don't render anything while loading or on error - static profile will show instead
-  if (loading || error || !data) return null;
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <svg className="h-8 w-8 animate-spin text-white/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    );
+  }
+  
+  // On error or no data, fallback will show (handled by display toggle)
+  if (error || !data) return null;
 
   return (
     <ProfileCard

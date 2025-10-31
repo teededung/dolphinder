@@ -69,36 +69,62 @@ const dev: DeveloperProfile = {
         <div
           class="relative rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm"
         >
-          <!-- Offchain profile (shown immediately) -->
-          <div id="static-profile">
-            <ProfileCard
-              client:only="react"
-              variant={dev.walrusBlobId ? "onchain" : "offchain"}
-              name={dev.name}
-              username={dev.username}
-              avatar={dev.avatar}
-              bio={dev.bio}
-              entry={dev.entry}
-              github={dev.github}
-              linkedin={dev.linkedin}
-              telegram={dev.telegram}
-              website={dev.website}
-              walletAddress={dev.slushWallet}
-              projects={dev.projects}
-              certificates={dev.certificates}
-              showEditButton={isOwner || undefined}
-              isOwner={isOwner || undefined}
-            />
-          </div>
+          {dev.walrusBlobId ? (
+            <>
+              <!-- Onchain profile (priority if walrus_blob_id exists) -->
+              <div id="onchain-profile">
+                <OnchainProfileWrapper
+                  client:only="react"
+                  username={dev.username}
+                  showEditButton={isOwner || undefined}
+                />
+              </div>
 
-          <!-- Onchain profile overlay (loads in background) -->
-          <div id="onchain-profile" style="display:none">
-            <OnchainProfileWrapper
-              client:only="react"
-              username={dev.username}
-              showEditButton={isOwner || undefined}
-            />
-          </div>
+              <!-- Offchain fallback (hidden, shown only if onchain fails) -->
+              <div id="static-profile" style="display:none">
+                <ProfileCard
+                  client:only="react"
+                  variant="offchain"
+                  name={dev.name}
+                  username={dev.username}
+                  avatar={dev.avatar}
+                  bio={dev.bio}
+                  entry={dev.entry}
+                  github={dev.github}
+                  linkedin={dev.linkedin}
+                  telegram={dev.telegram}
+                  website={dev.website}
+                  walletAddress={dev.slushWallet}
+                  projects={dev.projects}
+                  certificates={dev.certificates}
+                  showEditButton={isOwner || undefined}
+                  isOwner={isOwner || undefined}
+                />
+              </div>
+            </>
+          ) : (
+            <!-- Offchain profile only (no walrus_blob_id) -->
+            <div id="static-profile">
+              <ProfileCard
+                client:only="react"
+                variant="offchain"
+                name={dev.name}
+                username={dev.username}
+                avatar={dev.avatar}
+                bio={dev.bio}
+                entry={dev.entry}
+                github={dev.github}
+                linkedin={dev.linkedin}
+                telegram={dev.telegram}
+                website={dev.website}
+                walletAddress={dev.slushWallet}
+                projects={dev.projects}
+                certificates={dev.certificates}
+                showEditButton={isOwner || undefined}
+                isOwner={isOwner || undefined}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

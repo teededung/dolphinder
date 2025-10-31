@@ -77,7 +77,6 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         }
         
         const json = await fetchJson<OnchainData>(blobId);
-        console.log('[OnchainProfile] Loaded onchain data:', json);
         setData(json);
         setIsVerified(verifiedFlag ?? null);
         if (ownerAddr) setOwner(ownerAddr);

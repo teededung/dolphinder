@@ -1,6 +1,7 @@
 export interface ProjectImage {
   filename?: string;             // Just the filename (e.g., "49c1f7d86rej-1761833413291.jpeg")
-  quiltPatchId?: string;         // Walrus quilt patch ID (for verification/sync only)
+  blobId?: string;               // Walrus blob ID (individual image stored as blob)
+  quiltPatchId?: string;         // Walrus quilt patch ID (for quilt-based storage)
   metadata?: {
     size: number;                // Image size in bytes
     format: string;              // Image format (jpg, png, etc)

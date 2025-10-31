@@ -100,7 +100,7 @@ PUBLIC_ADMIN_EMAILS=your-admin-email@example.com
 
 ### In GitHub
 
-1. Go to Settings > Developer settings > OAuth Apps > New OAuth App
+1. Go to Settings > Developer settings > OAuth Apps > New OAuth App (https://github.com/settings/applications/new)
 2. Fill in:
    - Application name: Dolphinder
    - Homepage URL: `http://localhost:4321` (for dev) or your production URL

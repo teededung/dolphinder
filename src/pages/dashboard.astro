@@ -5,7 +5,7 @@ import ProfileFormWrapper from "../components/shared/ProfileFormWrapper";
 import WalrusBadge from "../components/shared/WalrusBadge";
 import WalrusStorageInfoWrapper from "../components/dashboard/WalrusStorageInfoWrapper";
 import EditableAvatar from "../components/dashboard/EditableAvatar";
-import ProjectsManager from "../components/dashboard/ProjectsManager";
+import ProjectsManagerWrapper from "../components/dashboard/ProjectsManagerWrapper";
 import { createSupabaseServerClient } from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
 import { shortenAddress } from "../lib/utils";
@@ -307,9 +307,11 @@ function formatTelegramLink(telegram: string | null): string {
       <!-- Projects Management -->
       <div class="mt-8">
         <div class="bg-card rounded-lg border p-6">
-          <ProjectsManager
+          <ProjectsManagerWrapper
             client:load
+            username={developer.username}
             initialProjects={developer.projects || []}
+            walrusBlobId={developer.walrus_blob_id}
           />
         </div>
       </div>

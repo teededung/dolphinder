@@ -101,4 +101,39 @@ export async function fetchJson<T = any>(blobId: string): Promise<T> {
   }
 }
 
+/**
+ * Get Walrus aggregator URL for an image by its quilt patch ID.
+ * Returns the full URL to fetch the image from Walrus.
+ * 
+ * Note: Blob IDs in Walrus are base64-encoded strings.
+ * They may be stored as URL-safe base64 (with _ and -) but Walrus aggregator 
+ * expects standard base64 (with + and /) or URL-encoded format.
+ */
+export function getWalrusImageUrl(quiltPatchId: string): string {
+  const AGGREGATOR_URL = (import.meta as any).env?.PUBLIC_WALRUS_AGGREGATOR_URL 
+    ?? (typeof process !== 'undefined' ? (process as any).env?.WALRUS_AGGREGATOR_URL : undefined);
+  if (!AGGREGATOR_URL) {
+    throw new Error('WALRUS_AGGREGATOR_URL is not configured');
+  }
+  
+  // Try blob ID as-is first (most common case)
+  // If quiltPatchId contains URL-safe base64 characters (_ or -), 
+  // it might need to stay as-is since Walrus aggregator handles both formats
+  return `${String(AGGREGATOR_URL).replace(/\/$/, '')}/v1/blobs/${quiltPatchId}`;
+}
+
+/**
+ * Check if a Walrus image is accessible.
+ * Returns true if the image exists and can be loaded.
+ */
+export async function checkWalrusImageExists(quiltPatchId: string): Promise<boolean> {
+  try {
+    const url = getWalrusImageUrl(quiltPatchId);
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 

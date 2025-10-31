@@ -1,40 +1,15 @@
 import { ExternalLink, Github, Globe, Star } from 'lucide-react';
 import { Button } from '../ui/button';
-import { getQuiltPatchUrl } from '@/lib/walrus-quilt';
+import ProjectImageGrid from '../shared/ProjectImageGrid';
 import type { ProjectWithDeveloper } from '@/lib/showcase';
-import type { ProjectImage } from '@/types/project';
 
 interface ProjectListItemProps {
   project: ProjectWithDeveloper;
   onClick: () => void;
 }
 
-/**
- * Get image URL from project image (supports old string format, new ProjectImage format, and quilt patches)
- */
-function getImageUrl(image: string | ProjectImage, project: ProjectWithDeveloper): string | null {
-  // Old format: string URL
-  if (typeof image === 'string') {
-    return image;
-  }
-  
-  // New format: ProjectImage with filename
-  if (image.filename) {
-    return `/projects/${image.filename}`;
-  }
-  
-  // Quilt patch: need quiltId and patchId
-  if (image.quiltPatchId && project.walrusQuiltId) {
-    return getQuiltPatchUrl(project.walrusQuiltId, image.quiltPatchId);
-  }
-  
-  return null;
-}
-
 export default function ProjectListItem({ project, onClick }: ProjectListItemProps) {
-  // Get up to 3 images for preview grid
   const images = project.images || [];
-  const previewImages = images.slice(0, 3);
   
   return (
     <div
@@ -48,31 +23,21 @@ export default function ProjectListItem({ project, onClick }: ProjectListItemPro
       <div className="flex gap-4">
         {/* Image Preview */}
         <div className="flex-shrink-0 w-40 h-24 rounded-lg overflow-hidden border border-white/10 bg-white/5">
-          {previewImages.length > 0 ? (
-            <div className={`h-full ${
-              previewImages.length === 1 ? 'grid grid-cols-1' :
-              previewImages.length === 2 ? 'grid grid-cols-2 gap-0.5' :
-              'grid grid-cols-3 gap-0.5'
-            }`}>
-              {previewImages.map((img, idx) => {
-                const imgUrl = getImageUrl(img, project);
-                if (!imgUrl) return null;
-                
-                return (
-                  <div key={idx} className="relative h-full">
-                    <img
-                      src={imgUrl}
-                      alt={`${project.name} preview ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+          {images.length > 0 ? (
+            <ProjectImageGrid
+              images={images}
+              projectName={project.name}
+              walrusQuiltId={project.walrusQuiltId}
+              onImageClick={() => {}} // No action on click in list view
+              getImageUrl={(img) => 
+                typeof img === 'string' 
+                  ? img 
+                  : (img.filename ? `/projects/${img.filename}` : null)
+              }
+              maxImages={3}
+              variant="list"
+              showWalrusBadge={false}
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <span className="text-xs text-white/40">No Image</span>

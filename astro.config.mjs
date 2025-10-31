@@ -9,6 +9,15 @@ import react from "@astrojs/react";
 export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      exclude: ["@mysten/walrus-wasm"], // Exclude WASM from optimization
+    },
+    server: {
+      fs: {
+        // Allow serving WASM files from node_modules
+        allow: [".."],
+      },
+    },
   },
 
   integrations: [

@@ -244,6 +244,7 @@ export default function ProfileCard({
               const status = isNewFormat ? (project as Project).status : undefined;
               const featured = isNewFormat ? (project as Project).featured : false;
               const url = !isNewFormat ? (project as any).url : undefined;
+              const walrusQuiltId = isNewFormat ? (project as Project).walrusQuiltId : undefined;
               
               // Use images array (max 5 images)
               const allImages = (images || []).slice(0, 5);
@@ -322,6 +323,7 @@ export default function ProfileCard({
                       <ProjectImageGrid
                         images={allImages}
                         projectName={projectName}
+                        walrusQuiltId={walrusQuiltId}
                         onImageClick={openLightbox}
                         getImageUrl={(img) => 
                           typeof img === 'string' 

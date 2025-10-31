@@ -12,6 +12,9 @@ import {
 } from '../ui/dialog';
 import type { Project, ProjectImage } from '../../types/project';
 import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { getQuiltPatchUrl } from '../../lib/walrus-quilt';
+import { getWalrusImageUrl } from '../../lib/walrus';
+import { ProjectImagePlaceholder } from '../shared/ProjectImagePlaceholder';
 
 interface ProjectsManagerProps {
   initialProjects: any[];
@@ -19,6 +22,111 @@ interface ProjectsManagerProps {
 }
 
 const DEFAULT_TAGS = ['React', 'TypeScript', 'Tailwind', 'Next.js', 'Web2', 'Web3', 'NFT', 'GameFi', 'DeFi', 'SocialFi', 'AI', 'Smart Contract', 'Solidity', 'Move', 'Sui', 'Solana', 'Ethereum'];
+
+/**
+ * Component for displaying project image with fallback to placeholder
+ */
+function ProjectImageWithFallback({ 
+  imgSrc, 
+  projectName, 
+  imgIdx,
+  hasQuiltPatch,
+  showRemoveButton = false,
+  onRemove
+}: { 
+  imgSrc: string; 
+  projectName: string; 
+  imgIdx: number;
+  hasQuiltPatch: boolean;
+  showRemoveButton?: boolean;
+  onRemove?: () => void;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  if (imageError) {
+    return (
+      <div className="relative group">
+        <ProjectImagePlaceholder size="sm" />
+        {showRemoveButton && onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Remove image"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative group">
+      {isLoading && (
+        <div className="h-16 w-16 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 absolute inset-0 z-10">
+          <svg className="h-5 w-5 animate-spin text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+      )}
+      <img
+        src={imgSrc}
+        alt={`${projectName} - Image ${imgIdx + 1}`}
+        className="h-16 w-16 object-cover rounded-md border border-gray-200"
+        onLoad={() => setIsLoading(false)}
+        onError={(e) => {
+          console.error(`Failed to load image: ${imgSrc}`);
+          setIsLoading(false);
+          setImageError(true);
+        }}
+      />
+      {hasQuiltPatch && !imageError && !isLoading && (
+        <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
+          Walrus
+        </div>
+      )}
+      {showRemoveButton && onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Remove image"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Get image URL from ProjectImage with Walrus support
+ */
+function getImageSrc(img: string | ProjectImage): string | null {
+  if (typeof img === 'string') {
+    return img;
+  }
+  
+  // Priority 1: blobId (direct Walrus blob)
+  if (img.blobId) {
+    return getWalrusImageUrl(img.blobId);
+  }
+  
+  // Priority 2: quiltPatchId (Walrus quilt patch)
+  if (img.quiltPatchId) {
+    return getQuiltPatchUrl(img.quiltPatchId);
+  }
+  
+  // Priority 3: filename (localhost fallback)
+  if (img.filename) {
+    return `/projects/${img.filename}`;
+  }
+  
+  return null;
+}
 
 // Normalize projects from database to ensure they match Project type
 // Supports both old format (images: string[]) and new format (images: ProjectImage[])
@@ -527,71 +635,37 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     const isProjectImage = typeof image === 'object';
                     const quiltPatchId = isProjectImage ? image.quiltPatchId : undefined;
                     
-                    // Reconstruct path from filename or use direct string
-                    let imagePath = '';
-                    if (typeof image === 'string') {
-                      imagePath = image;
-                    } else if (image.filename) {
-                      imagePath = `/projects/${image.filename}`;
-                    }
-                    
-                    // Priority: preview blob > reconstructed path
+                    // Priority: preview blob > Walrus > localhost
                     const previewUrl = previewImages.get(index);
-                    const imgSrc = previewUrl || imagePath;
+                    const imgSrc = previewUrl || getImageSrc(image);
                     
-                    const isBlob = imagePath.startsWith('blob:');
+                    const isBlob = imgSrc?.startsWith('blob:') || false;
                     const hasQuiltPatch = !!quiltPatchId;
                     
+                    // Show loading spinner while uploading
+                    if (isBlob && uploadingImage) {
+                      return (
+                        <div key={index} className="h-16 w-16 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100">
+                          <svg className="h-5 w-5 animate-spin text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        </div>
+                      );
+                    }
+                    
+                    if (!imgSrc) return null;
+                    
                     return (
-                      <div key={index} className="relative group">
-                        {isBlob && uploadingImage ? (
-                          <div className="h-20 w-20 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100">
-                            <svg className="h-6 w-6 animate-spin text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            <img
-                              src={imgSrc}
-                              alt={`Project image ${index + 1}`}
-                              className="h-20 w-20 object-cover rounded-md border border-gray-300"
-                              onError={(e) => {
-                                console.error('Failed to load image:', imgSrc);
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                // Show placeholder
-                                const parent = target.parentElement;
-                                if (parent && !parent.querySelector('.image-error')) {
-                                  const placeholder = document.createElement('div');
-                                  placeholder.className = 'image-error h-20 w-20 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-400 text-xs';
-                                  placeholder.textContent = 'Error';
-                                  parent.appendChild(placeholder);
-                                }
-                              }}
-                              onLoad={() => {
-                                if (!isBlob) {
-                                  console.log('Image loaded successfully:', imgSrc);
-                                }
-                              }}
-                            />
-                            {hasQuiltPatch && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
-                                Walrus
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove image"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
+                      <ProjectImageWithFallback
+                        key={index}
+                        imgSrc={imgSrc}
+                        projectName={formData.name || 'Project'}
+                        imgIdx={index}
+                        hasQuiltPatch={hasQuiltPatch}
+                        showRemoveButton={true}
+                        onRemove={() => removeImage(index)}
+                      />
                     );
                   })}
                 </div>
@@ -750,36 +824,24 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     {project.images && project.images.length > 0 && (
                       <div className="flex gap-2 mb-3">
                         {project.images.map((img, imgIdx) => {
+                          // Get image source with Walrus support
+                          const imgSrc = getImageSrc(img);
+                          
                           // Support both old format (string) and new format (ProjectImage)
                           const isProjectImage = typeof img === 'object';
                           const quiltPatchId = isProjectImage ? img.quiltPatchId : undefined;
-                          
-                          // Reconstruct path from filename or use direct string
-                          let imgSrc = '';
-                          if (typeof img === 'string') {
-                            imgSrc = img;
-                          } else if (img.filename) {
-                            imgSrc = `/projects/${img.filename}`;
-                          }
-                          
                           const hasQuiltPatch = !!quiltPatchId;
                           
+                          if (!imgSrc) return null;
+                          
                           return (
-                            <div key={imgIdx} className="relative">
-                              <img
-                                src={imgSrc}
-                                alt={`${project.name} - Image ${imgIdx + 1}`}
-                                className="h-16 w-16 object-cover rounded-md border border-gray-200"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              {hasQuiltPatch && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/90 text-white text-[8px] text-center py-0.5 rounded-b-md">
-                                  Walrus
-                                </div>
-                              )}
-                            </div>
+                            <ProjectImageWithFallback 
+                              key={imgIdx}
+                              imgSrc={imgSrc}
+                              projectName={project.name}
+                              imgIdx={imgIdx}
+                              hasQuiltPatch={hasQuiltPatch}
+                            />
                           );
                         })}
                       </div>

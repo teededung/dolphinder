@@ -144,16 +144,12 @@ export async function uploadQuilt(
 }
 
 /**
- * Fetch a specific patch from a Walrus Quilt.
+ * Fetch a specific patch from a Walrus Quilt using by-quilt-patch-id endpoint.
  * 
- * @param quiltId - The Quilt ID
- * @param patchId - The Patch ID (identifier used during upload)
+ * @param patchId - The Patch ID (quiltPatchId from upload response)
  * @returns Blob of the image data
  */
-export async function fetchQuiltPatch(
-  quiltId: string, 
-  patchId: string
-): Promise<Blob> {
+export async function fetchQuiltPatch(patchId: string): Promise<Blob> {
   const AGGREGATOR_URL = (import.meta as any).env?.PUBLIC_WALRUS_AGGREGATOR_URL 
     ?? (typeof process !== 'undefined' ? (process as any).env?.WALRUS_AGGREGATOR_URL : undefined);
   
@@ -162,7 +158,8 @@ export async function fetchQuiltPatch(
   }
 
   const base = String(AGGREGATOR_URL).replace(/\/$/, '');
-  const url = `${base}/v1/quilts/${encodeURIComponent(quiltId)}/${encodeURIComponent(patchId)}`;
+  // Use by-quilt-patch-id endpoint - doesn't need quiltId!
+  const url = `${base}/v1/blobs/by-quilt-patch-id/${patchId}`;
 
   try {
     const response = await fetch(url, { method: 'GET' });
@@ -180,14 +177,16 @@ export async function fetchQuiltPatch(
 }
 
 /**
- * Get the URL for a specific patch in a Walrus Quilt.
+ * Get the URL for a specific patch in a Walrus Quilt using by-quilt-patch-id endpoint.
  * This can be used directly in <img> src attributes.
  * 
- * @param quiltId - The Quilt ID
- * @param patchId - The Patch ID (identifier used during upload)
+ * NOTE: Use /v1/blobs/by-quilt-patch-id/{patchId} instead of /v1/quilts/{quiltId}/{patchId}
+ * The patch ID alone is sufficient to retrieve the patch content.
+ * 
+ * @param patchId - The Patch ID (quiltPatchId from upload response)
  * @returns URL string for the patch
  */
-export function getQuiltPatchUrl(quiltId: string, patchId: string): string {
+export function getQuiltPatchUrl(patchId: string): string {
   const AGGREGATOR_URL = (import.meta as any).env?.PUBLIC_WALRUS_AGGREGATOR_URL 
     ?? (typeof process !== 'undefined' ? (process as any).env?.WALRUS_AGGREGATOR_URL : undefined);
   
@@ -197,6 +196,7 @@ export function getQuiltPatchUrl(quiltId: string, patchId: string): string {
   }
 
   const base = String(AGGREGATOR_URL).replace(/\/$/, '');
-  return `${base}/v1/quilts/${encodeURIComponent(quiltId)}/${encodeURIComponent(patchId)}`;
+  // Use by-quilt-patch-id endpoint - doesn't need quiltId!
+  return `${base}/v1/blobs/by-quilt-patch-id/${patchId}`;
 }
 

@@ -3,6 +3,7 @@ import { ExternalLink, Github, Globe, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { getQuiltPatchUrl } from '@/lib/walrus-quilt';
+import { getWalrusImageUrl } from '@/lib/walrus';
 import { ProfileAvatar } from '../shared/ProfileAvatar';
 import ProjectImageGrid from '../shared/ProjectImageGrid';
 import LightboxDialog from '../shared/LightboxDialog';
@@ -16,19 +17,26 @@ interface ProjectModalProps {
 }
 
 /**
- * Get image URL from project image
+ * Get image URL from project image (prioritize Walrus)
  */
-function getImageUrl(image: string | ProjectImage, project: ProjectWithDeveloper): string | null {
+function getImageUrl(image: string | ProjectImage): string | null {
   if (typeof image === 'string') {
     return image;
   }
   
-  if (image.filename) {
-    return `/projects/${image.filename}`;
+  // Priority 1: blobId (direct Walrus blob)
+  if (image.blobId) {
+    return getWalrusImageUrl(image.blobId);
   }
   
-  if (image.quiltPatchId && project.walrusQuiltId) {
-    return getQuiltPatchUrl(project.walrusQuiltId, image.quiltPatchId);
+  // Priority 2: quiltPatchId (Walrus quilt patch via HTTP API)
+  if (image.quiltPatchId) {
+    return getQuiltPatchUrl(image.quiltPatchId);
+  }
+  
+  // Priority 3: filename (localhost fallback)
+  if (image.filename) {
+    return `/projects/${image.filename}`;
   }
   
   return null;
@@ -68,8 +76,9 @@ export default function ProjectModal({ project, isOpen, onClose }: ProjectModalP
                 <ProjectImageGrid
                   images={images}
                   projectName={project.name}
+                  walrusQuiltId={project.walrusQuiltId}
                   onImageClick={openLightbox}
-                  getImageUrl={(img) => getImageUrl(img, project)}
+                  getImageUrl={getImageUrl}
                   maxImages={5}
                   variant="default"
                 />

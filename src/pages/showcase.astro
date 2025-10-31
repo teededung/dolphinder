@@ -1,12 +1,16 @@
 ---
 import MainLayout from "../components/MainLayout.astro";
+import ShowcaseGrid from "../components/showcase/ShowcaseGrid";
+import { createSupabaseServerClient } from "../lib/supabase/serverClient";
+import { aggregateAllProjects } from "../lib/showcase";
+
+export const prerender = false;
+
+// Aggregate all projects from verified developers
+const supabase = createSupabaseServerClient(Astro.cookies);
+const allProjects = await aggregateAllProjects(supabase);
 ---
 
-<MainLayout title="Showcase">
-  <div class="min-h-screen pt-20">
-    <div class="container mx-auto px-4 py-8">
-      <h1>Showcase</h1>
-    </div>
-  </div>
+<MainLayout title="Project Showcase">
+  <ShowcaseGrid projects={allProjects} client:load />
 </MainLayout>
-

@@ -5,9 +5,10 @@ import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
 import WalrusBadge from './WalrusBadge';
+import ProjectImageGrid from './ProjectImageGrid';
+import LightboxDialog from './LightboxDialog';
 import type { Project } from '../../types/project';
 import type { Certificate } from '../../types/certificate';
-import { Dialog, DialogContent } from '../ui/dialog';
 import { QRCodeSVG } from 'qrcode.react';
 
 type ProfileCardProps = {
@@ -315,308 +316,21 @@ export default function ProfileCard({
                     <p className="text-sm text-white/70 mb-3 leading-relaxed">{projectDescription}</p>
                   )}
                   
-                  {/* Images Gallery - Grid Layout */}
+                  {/* Images Gallery - Unified Grid Layout */}
                   {allImages.length > 0 && (
                     <div className="mb-3">
-                      {allImages.length === 1 ? (
-                        // Single image: full width
-                        <button
-                          type="button"
-                          className="relative w-full aspect-video overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                          onClick={() => {
-                            const img = allImages[0];
-                            const imgSrc = typeof img === 'string' 
-                              ? img 
-                              : (img.filename ? `/projects/${img.filename}` : '');
-                            if (imgSrc) openLightbox(imgSrc);
-                          }}
-                        >
-                          {(() => {
-                            const img = allImages[0];
-                            const imgSrc = typeof img === 'string' 
-                              ? img 
-                              : (img.filename ? `/projects/${img.filename}` : '');
-                            const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                            
-                            if (!imgSrc && hasQuiltPatch) {
-                              return (
-                                <div className="w-full h-full flex items-center justify-center bg-white/5">
-                                  <span className="text-sm text-white/40">
-                                    {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                  </span>
-                                </div>
-                              );
-                            }
-                            if (!imgSrc) return null;
-                            
-                            return (
-                              <img
-                                src={imgSrc}
-                                alt={`${projectName}`}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            );
-                          })()}
-                        </button>
-                      ) : allImages.length === 2 ? (
-                        // Two images: side by side
-                        <div className="grid grid-cols-2 gap-2">
-                          {allImages.map((img: any, imgIdx: number) => {
-                            const imgSrc = typeof img === 'string' 
-                              ? img 
-                              : (img.filename ? `/projects/${img.filename}` : '');
-                            const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                            
-                            if (!imgSrc && hasQuiltPatch) {
-                              return (
-                                <div key={imgIdx} className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <span className="text-xs text-white/40">
-                                      {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            if (!imgSrc) return null;
-                            
-                            return (
-                              <button
-                                key={imgIdx}
-                                type="button"
-                                className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                                onClick={() => openLightbox(imgSrc)}
-                              >
-                                <img
-                                  src={imgSrc}
-                                  alt={`${projectName} - Image ${imgIdx + 1}`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                  }}
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : allImages.length === 3 ? (
-                        // Three images: 1 large + 2 small
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            className="relative col-span-2 aspect-video overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                            onClick={() => {
-                              const img = allImages[0];
-                              const imgSrc = typeof img === 'string' 
-                                ? img 
-                                : (img.filename ? `/projects/${img.filename}` : '');
-                              if (imgSrc) openLightbox(imgSrc);
-                            }}
-                          >
-                            {(() => {
-                              const img = allImages[0];
-                              const imgSrc = typeof img === 'string' 
-                                ? img 
-                                : (img.filename ? `/projects/${img.filename}` : '');
-                              const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                              
-                              if (!imgSrc && hasQuiltPatch) {
-                                return (
-                                  <div className="w-full h-full flex items-center justify-center bg-white/5">
-                                    <span className="text-sm text-white/40">
-                                      {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                    </span>
-                                  </div>
-                                );
-                              }
-                              if (!imgSrc) return null;
-                              
-                              return (
-                                <img
-                                  src={imgSrc}
-                                  alt={`${projectName} - Image 1`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                  }}
-                                />
-                              );
-                            })()}
-                          </button>
-                          <div className="flex flex-col gap-2">
-                            {allImages.slice(1, 3).map((img: any, imgIdx: number) => {
-                              const imgSrc = typeof img === 'string' 
-                                ? img 
-                                : (img.filename ? `/projects/${img.filename}` : '');
-                              const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                              
-                              if (!imgSrc && hasQuiltPatch) {
-                                return (
-                                  <div key={imgIdx + 1} className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <span className="text-xs text-white/40">
-                                        {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              if (!imgSrc) return null;
-                              
-                              return (
-                                <button
-                                  key={imgIdx + 1}
-                                  type="button"
-                                  className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                                  onClick={() => openLightbox(imgSrc)}
-                                >
-                                  <img
-                                    src={imgSrc}
-                                    alt={`${projectName} - Image ${imgIdx + 2}`}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : allImages.length === 4 ? (
-                        // Four images: 2x2 grid
-                        <div className="grid grid-cols-2 gap-2">
-                          {allImages.map((img: any, imgIdx: number) => {
-                            const imgSrc = typeof img === 'string' 
-                              ? img 
-                              : (img.filename ? `/projects/${img.filename}` : '');
-                            const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                            
-                            if (!imgSrc && hasQuiltPatch) {
-                              return (
-                                <div key={imgIdx} className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <span className="text-xs text-white/40">
-                                      {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            if (!imgSrc) return null;
-                            
-                            return (
-                              <button
-                                key={imgIdx}
-                                type="button"
-                                className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                                onClick={() => openLightbox(imgSrc)}
-                              >
-                                <img
-                                  src={imgSrc}
-                                  alt={`${projectName} - Image ${imgIdx + 1}`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                  }}
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        // Five images: 2+3 layout (2 on top, 3 on bottom)
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            {allImages.slice(0, 2).map((img: any, imgIdx: number) => {
-                              const imgSrc = typeof img === 'string' 
-                                ? img 
-                                : (img.filename ? `/projects/${img.filename}` : '');
-                              const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                              
-                              if (!imgSrc && hasQuiltPatch) {
-                                return (
-                                  <div key={imgIdx} className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <span className="text-xs text-white/40">
-                                        {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              if (!imgSrc) return null;
-                              
-                              return (
-                                <button
-                                  key={imgIdx}
-                                  type="button"
-                                  className="relative aspect-video overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                                  onClick={() => openLightbox(imgSrc)}
-                                >
-                                  <img
-                                    src={imgSrc}
-                                    alt={`${projectName} - Image ${imgIdx + 1}`}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {allImages.slice(2, 5).map((img: any, imgIdx: number) => {
-                              const imgSrc = typeof img === 'string' 
-                                ? img 
-                                : (img.filename ? `/projects/${img.filename}` : '');
-                              const hasQuiltPatch = typeof img !== 'string' && !!img.quiltPatchId;
-                              
-                              if (!imgSrc && hasQuiltPatch) {
-                                return (
-                                  <div key={imgIdx + 2} className="relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <span className="text-xs text-white/40">
-                                        {img.metadata?.format?.toUpperCase() || 'IMG'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              if (!imgSrc) return null;
-                              
-                              return (
-                                <button
-                                  key={imgIdx + 2}
-                                  type="button"
-                                  className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group"
-                                  onClick={() => openLightbox(imgSrc)}
-                                >
-                                  <img
-                                    src={imgSrc}
-                                    alt={`${projectName} - Image ${imgIdx + 3}`}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                      <ProjectImageGrid
+                        images={allImages}
+                        projectName={projectName}
+                        onImageClick={openLightbox}
+                        getImageUrl={(img) => 
+                          typeof img === 'string' 
+                            ? img 
+                            : (img.filename ? `/projects/${img.filename}` : null)
+                        }
+                        maxImages={5}
+                        variant="default"
+                      />
                     </div>
                   )}
 
@@ -677,18 +391,13 @@ export default function ProfileCard({
         </div>
       )}
 
-    {/* Lightbox Dialog */}
-    <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 bg-black/90 border-white/10">
-        {lightboxSrc && (
-          <img
-            src={lightboxSrc}
-            alt="Preview"
-            className="max-h-[80vh] w-auto h-auto mx-auto object-contain"
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+      {/* Lightbox Dialog */}
+      <LightboxDialog
+        isOpen={lightboxOpen}
+        imageSrc={lightboxSrc}
+        onClose={() => setLightboxOpen(false)}
+        altText="Project image preview"
+      />
     </div>
   );
 }

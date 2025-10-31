@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useCurrentAccount, useWallets, useConnectWallet, useDisconnectWallet, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Button } from "./Button";
-import type { Developer } from "../../lib/auth";
+import type { DeveloperDB } from "../../types/developer";
 import { useModalStore } from "../../store/useModalStore";
 import { uploadJson } from "../../lib/walrus";
 import { getDevIdByUsername } from "../../lib/sui-views";
@@ -10,7 +10,7 @@ import UnbindWarningModal from "./UnbindWarningModal";
 import { WalletPopupAlert } from "./WalletPopupAlert";
 
 interface ProfileFormProps {
-  developer: Developer;
+  developer: DeveloperDB;
 }
 
 export default function ProfileForm({ developer }: ProfileFormProps) {

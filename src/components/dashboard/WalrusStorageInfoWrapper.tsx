@@ -1,14 +1,14 @@
 import { GlobalSuiProvider } from "../providers/GlobalSuiProvider";
 import WalrusStorageInfo from "./WalrusStorageInfo";
 import type { WalrusBlobMetadata } from "../../lib/walrus-metadata";
-import type { Developer } from "../../lib/auth";
+import type { DeveloperDB } from "../../types/developer";
 
 interface WalrusStorageInfoWrapperProps {
   blobMetadata: WalrusBlobMetadata;
   devId: string;
   walrusBlobId: string;
   blobObjectId: string;
-  developer: Developer;
+  developer: DeveloperDB;
 }
 
 /**

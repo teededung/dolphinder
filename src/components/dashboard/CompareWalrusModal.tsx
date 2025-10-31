@@ -12,9 +12,8 @@ import { fetchJson, uploadJson } from "../../lib/walrus";
 import { uploadQuilt, blobToBase64 } from "../../lib/walrus-quilt";
 import { getDevIdByUsername } from "../../lib/sui-views";
 import { makeUpdateProfileTx } from "../../lib/sui-tx";
-import type { Developer } from "../../lib/auth";
+import type { DeveloperDB, DeveloperWalrus } from "../../types/developer";
 import type { ProjectImage } from "../../types/project";
-import type { ProfileData } from "../../types/developer";
 import { useModalStore } from "../../store/useModalStore";
 import { WalletPopupAlert } from "../shared/WalletPopupAlert";
 
@@ -23,18 +22,17 @@ interface CompareWalrusModalProps {
   onClose: () => void;
   walrusBlobId: string;
   blobObjectId: string;
-  developer: Developer;
+  developer: DeveloperDB;
 }
 
 export default function CompareWalrusModal({
   open,
   onClose,
   walrusBlobId,
-  blobObjectId,
   developer,
 }: CompareWalrusModalProps) {
   const [loading, setLoading] = useState(false);
-  const [onchainData, setOnchainData] = useState<ProfileData | null>(null);
+  const [onchainData, setOnchainData] = useState<DeveloperWalrus | null>(null);
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [syncDirection, setSyncDirection] = useState<"to-walrus" | "to-offchain" | null>(null);
@@ -59,7 +57,7 @@ export default function CompareWalrusModal({
     setOnchainData(null);
 
     try {
-      const data = await fetchJson<ProfileData>(walrusBlobId);
+      const data = await fetchJson<DeveloperWalrus>(walrusBlobId);
       setOnchainData(data);
       console.log("[Compare Modal] Fetched onchain data:", data);
     } catch (err: any) {
@@ -197,7 +195,7 @@ export default function CompareWalrusModal({
         })
       );
 
-      const profileData: ProfileData = {
+      const profileData: DeveloperWalrus = {
         profile: {
           name: developer.name,
           bio: developer.bio || "",
@@ -336,7 +334,7 @@ export default function CompareWalrusModal({
   }
 
   // Prepare offchain data in same format as onchain
-  const offchainData: ProfileData = {
+  const offchainData: DeveloperWalrus = {
     profile: {
       name: developer.name,
       bio: developer.bio || "",

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, Download, GitCompare } from 'lucide-react';
 import type { WalrusBlobMetadata } from '../../lib/walrus-metadata';
 import { getSuiscanObjectUrl, getWalrusAggregatorUrl } from '../../lib/blockchain-utils';
-import type { Developer } from '../../lib/auth';
+import type { DeveloperDB } from '../../types/developer';
 import CompareWalrusModal from './CompareWalrusModal';
 import { Button } from '../ui/button';
 
@@ -11,7 +11,7 @@ interface WalrusStorageInfoProps {
   devId: string;
   walrusBlobId: string;
   blobObjectId: string;
-  developer: Developer;
+  developer: DeveloperDB;
 }
 
 export default function WalrusStorageInfo({

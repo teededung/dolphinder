@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { downloadAvatar, isExternalUrl } from '../src/lib/avatar';
+import { downloadAvatar, isExternalUrl } from '../src/lib/media-upload';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

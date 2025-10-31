@@ -1,26 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-export interface Developer {
-  id: string;
-  user_id: string;
-  username: string;
-  name: string;
-  avatar: string | null;
-  github: string | null;
-  linkedin: string | null;
-  telegram: string | null;
-  website: string | null;
-  bio: string | null;
-  slush_wallet: string | null;
-  entry: string | null;
-  projects: any[] | null; // Array of project objects
-  certificates: any[] | null; // Array of certificate objects
-  walrus_blob_id: string | null;
-  blob_object_id: string | null; // Sui object ID of Walrus Blob (for metadata queries)
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import type { DeveloperDB } from '@/types/developer';
 
 export interface User {
   id: string;
@@ -58,7 +37,7 @@ export function isAdmin(email: string): boolean {
 export async function getDeveloperProfile(
   supabase: SupabaseClient,
   userId: string
-): Promise<Developer | null> {
+): Promise<DeveloperDB | null> {
   const { data, error } = await supabase
     .from('developers')
     .select('*')
@@ -69,7 +48,7 @@ export async function getDeveloperProfile(
     return null;
   }
 
-  return data as Developer;
+  return data as DeveloperDB;
 }
 
 /**
@@ -78,7 +57,7 @@ export async function getDeveloperProfile(
 export async function getDeveloperByUsername(
   supabase: SupabaseClient,
   username: string
-): Promise<Developer | null> {
+): Promise<DeveloperDB | null> {
   const { data, error } = await supabase
     .from('developers')
     .select('*')
@@ -89,7 +68,7 @@ export async function getDeveloperByUsername(
     return null;
   }
 
-  return data as Developer;
+  return data as DeveloperDB;
 }
 
 /**
@@ -97,7 +76,7 @@ export async function getDeveloperByUsername(
  */
 export async function getVerifiedDevelopers(
   supabase: SupabaseClient
-): Promise<Developer[]> {
+): Promise<DeveloperDB[]> {
   const { data, error } = await supabase
     .from('developers')
     .select('*')
@@ -108,7 +87,7 @@ export async function getVerifiedDevelopers(
     return [];
   }
 
-  return data as Developer[];
+  return data as DeveloperDB[];
 }
 
 /**
@@ -116,7 +95,7 @@ export async function getVerifiedDevelopers(
  */
 export async function getPendingDevelopers(
   supabase: SupabaseClient
-): Promise<Developer[]> {
+): Promise<DeveloperDB[]> {
   const { data, error } = await supabase
     .from('developers')
     .select('*')
@@ -127,6 +106,6 @@ export async function getPendingDevelopers(
     return [];
   }
 
-  return data as Developer[];
+  return data as DeveloperDB[];
 }
 

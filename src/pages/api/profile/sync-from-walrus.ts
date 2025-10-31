@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
 import { getCurrentUser, getDeveloperProfile } from '../../../lib/auth';
 import { fetchJson } from '../../../lib/walrus';
 import { uploadAvatar, deleteOldAvatar } from '../../../lib/media-upload';
-import type { ProfileData } from '../../../types/developer';
+import type { DeveloperWalrus } from '../../../types/developer';
 
 export const prerender = false;
 
@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Fetch data from Walrus
     console.log('[Sync from Walrus] Fetching blob:', walrusBlobId);
-    const onchainData = await fetchJson<ProfileData>(walrusBlobId);
+    const onchainData = await fetchJson<DeveloperWalrus>(walrusBlobId);
 
     if (!onchainData || !onchainData.profile) {
       return new Response(

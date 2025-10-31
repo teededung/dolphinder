@@ -1,9 +1,9 @@
 import { GlobalSuiProvider } from "../providers/GlobalSuiProvider";
 import ProfileForm from "./ProfileForm";
-import type { Developer } from "../../lib/auth";
+import type { DeveloperDB } from "../../types/developer";
 
 interface ProfileFormWrapperProps {
-  developer: Developer;
+  developer: DeveloperDB;
 }
 
 /**

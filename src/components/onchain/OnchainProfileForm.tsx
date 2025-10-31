@@ -6,9 +6,9 @@ import { uploadJson, fetchJson } from '../../lib/walrus';
 import { getDevIdByUsername } from '../../lib/sui-views';
 import { makeRegisterTx, makeUpdateProfileTx } from '../../lib/sui-tx';
 import { Button } from '../shared/Button';
-import type { ProfileData } from '../../types/developer';
+import type { DeveloperWalrus } from '../../types/developer';
 
-const EMPTY: ProfileData = {
+const EMPTY: DeveloperWalrus = {
   profile: {
     name: '',
     github: '',
@@ -25,7 +25,7 @@ export function OnchainProfileForm({ username }: { username: string }) {
   const account = useCurrentAccount();
   const [loading, setLoading] = useState(false);
   const [initialBlobId, setInitialBlobId] = useState<string | null>(null);
-  const [data, setData] = useState<ProfileData>(EMPTY);
+  const [data, setData] = useState<DeveloperWalrus>(EMPTY);
   const [message, setMessage] = useState<string | null>(null);
   const [owner, setOwner] = useState<string | null>(null);
   const { mutateAsync: signAndExecute } = (useSignAndExecuteTransaction as any)();
@@ -66,8 +66,8 @@ export function OnchainProfileForm({ username }: { username: string }) {
           return;
         }
         setInitialBlobId(blobId);
-        const json = await fetchJson<ProfileData>(blobId);
-        const merged: ProfileData = {
+        const json = await fetchJson<DeveloperWalrus>(blobId);
+        const merged: DeveloperWalrus = {
           profile: {
             name: json?.profile?.name || '',
             github: json?.profile?.github || '',

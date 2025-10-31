@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Developer } from "../lib/auth";
+import type { DeveloperDB } from "../types/developer";
 
 // Define the Dev schema for validation
 const DevSchema = z.object({
@@ -18,9 +18,9 @@ const DevSchema = z.object({
 export type Dev = z.infer<typeof DevSchema>;
 
 /**
- * Map Supabase Developer type to frontend Dev type
+ * Map Supabase DeveloperDB type to frontend Dev type
  */
-export function mapSupabaseDeveloperToDev(dbDev: Developer): Dev {
+export function mapSupabaseDeveloperToDev(dbDev: DeveloperDB): Dev {
     return {
         name: dbDev.name,
         username: dbDev.username,

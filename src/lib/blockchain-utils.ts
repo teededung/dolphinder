@@ -19,30 +19,6 @@ export function getSuiscanObjectUrl(
 }
 
 /**
- * Generate Walruscan URL for a Walrus blob
- * Note: Walruscan may not have a dedicated explorer yet.
- * This assumes a similar pattern to other blockchain explorers.
- * @param blobId - The Walrus blob ID
- * @param network - Network (mainnet or testnet)
- * @returns Full Walruscan URL (may need adjustment based on actual Walrus explorer)
- */
-export function getWalruscanBlobUrl(
-  blobId: string,
-  network: Network = 'testnet'
-): string {
-  // TODO: Verify this URL format with Walrus documentation
-  // Possible alternatives:
-  // - https://testnet.walruscan.com/blob/{blobId}
-  // - https://walrus.sui.io/testnet/blob/{blobId}
-  // For now, using aggregator URL pattern as fallback
-  const aggregatorUrl = network === 'testnet' 
-    ? 'https://aggregator.walrus-testnet.walrus.space'
-    : 'https://aggregator.walrus.space';
-  
-  return `${aggregatorUrl}/v1/${blobId}`;
-}
-
-/**
  * Generate Walrus aggregator direct access URL
  * This is the actual URL to access blob content
  * @param blobId - The Walrus blob ID
@@ -59,21 +35,3 @@ export function getWalrusAggregatorUrl(
   
   return `${baseUrl}/v1/blobs/${blobId}`;
 }
-
-/**
- * Generate Walrus Quilt patch URL for direct access to a specific image in a quilt
- * @param quiltId - The Walrus Quilt ID (not used for aggregator, only patchId matters)
- * @param patchId - The quilt patch ID from Walrus response
- * @returns Walrus aggregator URL for the specific patch
- */
-export function getWalrusQuiltPatchUrl(quiltId: string, patchId: string): string {
-  // Use environment variable if available, otherwise use default testnet
-  const AGGREGATOR_URL = (import.meta as any).env?.PUBLIC_WALRUS_AGGREGATOR_URL;
-  
-  const baseUrl = AGGREGATOR_URL || 'https://aggregator.walrus-testnet.walrus.space';
-  
-  // Quilt patch IDs are accessed via /v1/{patchId} on aggregator
-  // The patchId already contains the quilt reference
-  return `${baseUrl}/v1/${encodeURIComponent(patchId)}`;
-}
-

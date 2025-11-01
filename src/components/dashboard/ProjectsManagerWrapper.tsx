@@ -61,7 +61,6 @@ function ProjectsManagerLoader({
         
         const devId = await getDevIdByUsername(username);
         if (!devId) {
-          console.log('[ProjectsManagerWrapper] No devId found, using database projects');
           setProjects(initialProjects);
           return;
         }
@@ -87,7 +86,6 @@ function ProjectsManagerLoader({
         }
         
         if (!blobId) {
-          console.log('[ProjectsManagerWrapper] No blobId found, using database projects');
           setProjects(initialProjects);
           return;
         }
@@ -95,16 +93,14 @@ function ProjectsManagerLoader({
         // Fetch JSON data from Walrus
         const json = await fetchJson<OnchainData>(blobId);
         
-        // Use onchain projects if available, otherwise fallback to database
-        if (json?.projects && Array.isArray(json.projects)) {
-          console.log('[ProjectsManagerWrapper] ✅ Loaded projects from onchain Walrus:', json.projects.length);
+        // IMPORTANT: Only use onchain projects if they exist AND have length > 0
+        // Otherwise, prioritize database projects (user may have edited locally)
+        if (json?.projects && Array.isArray(json.projects) && json.projects.length > 0) {
           setProjects(json.projects);
         } else {
-          console.log('[ProjectsManagerWrapper] No projects in onchain data, using database projects');
           setProjects(initialProjects);
         }
       } catch (e: any) {
-        console.warn('[ProjectsManagerWrapper] Failed to load onchain projects:', e?.message || e);
         setError(String(e?.message || e));
         // Fallback to database projects on error
         setProjects(initialProjects);

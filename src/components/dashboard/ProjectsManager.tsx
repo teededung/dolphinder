@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import type { Project, ProjectImage } from '../../types/project';
-import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle, Cloud, HardDrive } from 'lucide-react';
 import { getQuiltPatchUrl } from '../../lib/walrus-quilt';
 import { getWalrusImageUrl } from '../../lib/walrus';
 import { ProjectImagePlaceholder } from '../shared/ProjectImagePlaceholder';
@@ -128,17 +128,41 @@ function getImageSrc(img: string | ProjectImage): string | null {
   return null;
 }
 
+/**
+ * Check if a project is stored on Walrus
+ */
+function isProjectOnWalrus(project: Project): boolean {
+  // Check if project has walrusQuiltId
+  if (project.walrusQuiltId) {
+    return true;
+  }
+  
+  // Check if any image has quiltPatchId or blobId
+  if (project.images && project.images.length > 0) {
+    return project.images.some(img => {
+      if (typeof img === 'object') {
+        return !!(img.quiltPatchId || img.blobId);
+      }
+      return false;
+    });
+  }
+  
+  return false;
+}
+
 // Normalize projects from database to ensure they match Project type
 // Supports both old format (images: string[]) and new format (images: ProjectImage[])
 function normalizeProjects(rawProjects: any[]): Project[] {
-  if (!Array.isArray(rawProjects)) return [];
+  if (!Array.isArray(rawProjects)) {
+    return [];
+  }
   
-  return rawProjects.map((p: any) => {
+  const normalized = rawProjects.map((p: any) => {
     // Normalize images to support both old and new formats
     const normalizedImages = Array.isArray(p.images) 
       ? p.images.map((img: any) => {
           // If it's already a ProjectImage object, keep it
-          if (typeof img === 'object' && img !== null && (img.localPath || img.quiltPatchId)) {
+          if (typeof img === 'object' && img !== null && (img.localPath || img.quiltPatchId || img.filename)) {
             return img as ProjectImage;
           }
           // If it's a string (old format), convert to new format with localPath only
@@ -180,7 +204,12 @@ function normalizeProjects(rawProjects: any[]): Project[] {
       featured: p.featured || false,
       createdAt: p.createdAt || new Date().toISOString(),
     };
-  }).filter((p: Project) => p.name && p.description); // Only keep valid projects
+  });
+  
+  // Filter out invalid projects
+  const filtered = normalized.filter((p: Project) => p.name && p.name.trim().length > 0);
+  
+  return filtered;
 }
 
 export default function ProjectsManager({ initialProjects = [], onProjectsChange }: ProjectsManagerProps) {
@@ -805,7 +834,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h4 className="font-semibold text-lg">{project.name}</h4>
                       {project.featured && (
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
@@ -817,6 +846,18 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                       }`}>
                         {project.status}
                       </span>
+                      {/* Walrus Storage Badge */}
+                      {isProjectOnWalrus(project) ? (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <img src="/walrus.svg" alt="Walrus" className="h-3 w-3" />
+                          On Walrus
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+                          <HardDrive className="h-3 w-3" />
+                          Offchain Only
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600 mb-3">{project.description}</p>
                     

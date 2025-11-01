@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignAndExecuteTransaction, useConnectWallet, useWallets } from "@mysten/dapp-kit";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,8 @@ export default function CompareWalrusModal({
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction() as any;
   const { open: openModal, close: closeModal } = useModalStore();
+  const wallets = useWallets();
+  const { mutate: connectWallet } = useConnectWallet();
 
   // Fetch onchain data when modal opens
   useEffect(() => {
@@ -469,6 +471,69 @@ export default function CompareWalrusModal({
 
         {!loading && !error && onchainData && (
           <div className="space-y-4">
+            {/* Wallet Connection Status */}
+            <div className="flex items-center justify-between rounded-lg border border-emerald-400/30 bg-emerald-500/5 px-4 py-3">
+              <span className="text-sm font-medium text-white">Wallet Status:</span>
+              {currentAccount ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-sm text-green-400">Connected</span>
+                  <span className="text-xs text-white/60">
+                    {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                    <span className="text-sm text-red-400">Not Connected</span>
+                  </div>
+                  <span className="text-xs text-white/60">
+                    Please connect your wallet first to sync to Walrus
+                  </span>
+                  <Button
+                    onClick={() => {
+                      openModal({
+                        content: (
+                          <div className="w-full">
+                            <h1 className="text-2xl font-bold mb-4">Connect your wallet</h1>
+                            <div className="flex flex-col gap-2">
+                              {wallets.map(wallet => (
+                                <Button
+                                  onClick={() => {
+                                    connectWallet(
+                                      { wallet },
+                                      {
+                                        onSuccess: () => {
+                                          closeModal();
+                                        },
+                                      }
+                                    );
+                                  }}
+                                  key={wallet.name}
+                                  className="flex items-center gap-2 px-2"
+                                >
+                                  <img
+                                    src={wallet.icon}
+                                    alt={wallet.name}
+                                    className="size-12 rounded-full"
+                                  />
+                                  {wallet.name}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        ),
+                      });
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-xs whitespace-nowrap"
+                  >
+                    Connect Wallet
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Comparison Table */}
             <div className="overflow-x-auto rounded-lg border border-emerald-400/30 bg-emerald-500/5">
               <table className="w-full text-sm">
@@ -648,7 +713,7 @@ export default function CompareWalrusModal({
             <div className="flex gap-3">
               <Button
                 onClick={handleSyncToWalrus}
-                disabled={syncing || !hasAnyDifference}
+                disabled={syncing}
                 className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {syncing && syncDirection === "to-walrus" ? (
@@ -685,7 +750,7 @@ export default function CompareWalrusModal({
 
               <Button
                 onClick={handleSyncToOffchain}
-                disabled={syncing || !hasAnyDifference}
+                disabled={syncing}
                 className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {syncing && syncDirection === "to-offchain" ? (

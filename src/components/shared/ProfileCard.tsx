@@ -124,7 +124,7 @@ export default function ProfileCard({
               
               {/* Absolute Dropdown for QR Code */}
               {showWalletQR && (
-                <div className="w-64 bg-black/50 absolute top-full left-0 right-0 mt-2 rounded-lg border border-white/20 shadow-2xl shadow-black/50 p-4 space-y-3 z-20 animate-slideDown">
+                <div className="md:w-64 w-full bg-black/90 absolute top-full left-0 right-0 mt-2 rounded-lg border border-white/20 shadow-2xl shadow-black/50 p-4 space-y-3 z-20 animate-slideDown">
                   {/* QR Code */}
                   <div className="flex justify-center bg-white p-3 rounded-lg">
                     <QRCodeSVG
@@ -136,8 +136,8 @@ export default function ProfileCard({
                   </div>
                   
                   {/* Wallet Address Text with Copy */}
-                  <div className="flex items-center gap-2 bg-white/10 rounded-lg p-2">
-                    <code className="font-mono text-xs text-white/90 break-all flex-1">{walletAddress}</code>
+                  <div className="flex items-center gap-2 border-2 rounded-lg p-2">
+                    <code className="font-mono text-xs text-white break-all flex-1">{walletAddress}</code>
                     <CopyButton
                       originText={walletAddress}
                       variant="ghost"
@@ -152,11 +152,11 @@ export default function ProfileCard({
         </div>
 
         {/* Right Column - Metadata */}
-        <div className="lg:col-span-8 space-y-6 text-left">
+        <div className="lg:col-span-8 space-y-6 text-center lg:text-left">
           {/* Name + username */}
           <div className="space-y-2">
             {name && <h1 className="text-4xl lg:text-5xl font-bold text-white">{name}</h1>}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
               {username && <p className="text-xl text-white/60">@{username}</p>}
               {/* Level/Role Badge */}
               {entry && (
@@ -170,12 +170,12 @@ export default function ProfileCard({
 
           {/* Bio */}
           {bio && (
-            <p className="text-white/80 text-lg leading-relaxed max-w-3xl">{bio}</p>
+            <p className="text-white/80 text-lg leading-relaxed max-w-3xl mx-auto lg:mx-0">{bio}</p>
           )}
 
           {/* Social Links */}
           {(github || linkedin || telegram || website) && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap justify-center lg:justify-start gap-3">
               {github && (
                 <Button
                   variant="ghost"
@@ -226,12 +226,12 @@ export default function ProfileCard({
 
       {/* Projects Section */}
       {projects && projects.length > 0 && (
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-4">
+        <div className="bg-white/5 rounded-lg md:p-4 p-0 border border-white/10">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-4 px-4 pt-4 md:px-0 md:pt-0">
             <Briefcase className="h-4 w-4" />
             Projects ({projects.length})
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-4 md:space-y-4 space-y-0 divide-y md:divide-y-0 divide-white/5">
             {projects.map((project, index) => {
               // Handle both old format (simple object) and new format (Project type)
               const isNewFormat = 'id' in project || 'tags' in project || 'status' in project;
@@ -252,7 +252,7 @@ export default function ProfileCard({
               return (
                 <div 
                   key={isNewFormat && 'id' in project ? project.id : index} 
-                  className={`bg-black/20 rounded-lg p-4 border transition-all ${
+                  className={`bg-black/20 md:rounded-lg rounded-none md:p-4 p-4 md:border border-0 transition-all ${
                     featured ? 'border-yellow-400/50 shadow-lg shadow-yellow-400/10' : 'border-white/5'
                   }`}
                 >
@@ -319,7 +319,7 @@ export default function ProfileCard({
                   
                   {/* Images Gallery - Unified Grid Layout */}
                   {allImages.length > 0 && (
-                    <div className="mb-3">
+                    <div className="mb-3 md:mx-0 -mx-4">
                       <ProjectImageGrid
                         images={allImages}
                         projectName={projectName}

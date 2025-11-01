@@ -70,6 +70,10 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -79,7 +83,16 @@ const Header = () => {
   const avatarFallback = (userEmail || "U").charAt(0).toUpperCase();
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-20 border-b border-white/10 bg-black/30 backdrop-blur-sm">
+    <>
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 md:hidden"
+          onClick={closeMobileMenu}
+        />
+      )}
+      
+      <header className="fixed top-0 right-0 left-0 z-20 border-b border-white/10 bg-black/30 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-2">
         {/* Desktop Header */}
         <div className="flex items-center justify-between">
@@ -163,7 +176,7 @@ const Header = () => {
                 href={item.href}
                 className="py-2 text-white/90 transition-colors duration-200 hover:text-white"
                 key={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {item.label}
               </a>
@@ -188,17 +201,17 @@ const Header = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="min-w-44" sideOffset={8} align="end">
                           {isAdmin && (
-                            <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/admin/dashboard"; }}>Admin Dashboard</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { closeMobileMenu(); window.location.href = "/admin/dashboard"; }}>Admin Dashboard</DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/dashboard"; }}>Dashboard</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { closeMobileMenu(); window.location.href = "/dashboard"; }}>Dashboard</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem variant="destructive" onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}>Logout</DropdownMenuItem>
+                          <DropdownMenuItem variant="destructive" onClick={() => { closeMobileMenu(); handleLogout(); }}>Logout</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   ) : (
                     <Button
-                      onClick={() => { setIsMobileMenuOpen(false); window.location.href = "/register"; }}
+                      onClick={() => { closeMobileMenu(); window.location.href = "/register"; }}
                       className="bg-white text-black hover:bg-white/90"
                     >
                       Get Started
@@ -211,6 +224,7 @@ const Header = () => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 

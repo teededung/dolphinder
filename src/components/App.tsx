@@ -2,6 +2,7 @@ import { GlobalSuiProvider } from "./providers/GlobalSuiProvider";
 import Header from "./shared/Header";
 import Footer from "./shared/Footer";
 import DialogStored from "./shared/DialogStored";
+import ScrollToTop from "./shared/ScrollToTop";
 
 interface AppProps {
   children?: React.ReactNode;
@@ -18,6 +19,7 @@ export default function App({ children }: AppProps) {
       <main>{children}</main>
       <Footer />
       <DialogStored />
+      <ScrollToTop />
     </GlobalSuiProvider>
   );
 }

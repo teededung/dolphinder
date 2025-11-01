@@ -86,17 +86,41 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         if (typeof maybeAvatar === 'string' && maybeAvatar.length > 0) {
           setAvatar(maybeAvatar);
         }
+
+        // Hide skeleton when data is loaded
+        const onchainProfileEl = document.getElementById('onchain-profile');
+        if (onchainProfileEl) {
+          const skeleton = onchainProfileEl.querySelector('[data-skeleton-loader]');
+          if (skeleton) {
+            (skeleton as HTMLElement).style.opacity = '0';
+            (skeleton as HTMLElement).style.transition = 'opacity 0.3s ease-out';
+            setTimeout(() => {
+              (skeleton as HTMLElement).style.display = 'none';
+            }, 300);
+          }
+        }
       } catch (e: any) {
         console.warn('[OnchainProfile] Failed to load onchain data:', e?.message || e);
         setError(String(e?.message || e));
         setIsVerified(null);
         
-        // Show offchain fallback on error
+        // Hide skeleton and show offchain fallback on error
         const staticEl = document.getElementById('static-profile');
         const onchainEl = document.getElementById('onchain-profile');
         
-        if (staticEl && onchainEl) {
+        if (onchainEl) {
+          const skeleton = onchainEl.querySelector('[data-skeleton-loader]');
+          if (skeleton) {
+            (skeleton as HTMLElement).style.opacity = '0';
+            (skeleton as HTMLElement).style.transition = 'opacity 0.3s ease-out';
+            setTimeout(() => {
+              (skeleton as HTMLElement).style.display = 'none';
+            }, 300);
+          }
           onchainEl.style.display = 'none';
+        }
+        
+        if (staticEl) {
           staticEl.style.removeProperty('display');
         }
       } finally {

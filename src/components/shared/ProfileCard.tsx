@@ -1,6 +1,6 @@
 import { Github, Linkedin, Globe, Database, Check, Send, Briefcase, Award, ExternalLink, Star, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -51,6 +51,22 @@ export default function ProfileCard({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [showWalletQR, setShowWalletQR] = useState(false);
+
+  // Hide skeleton loader when ProfileCard mounts
+  useEffect(() => {
+    const profileContainer = document.getElementById('static-profile');
+    if (profileContainer) {
+      const skeleton = profileContainer.querySelector('[data-skeleton-loader]');
+      if (skeleton) {
+        // Fade out skeleton smoothly
+        (skeleton as HTMLElement).style.opacity = '0';
+        (skeleton as HTMLElement).style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          (skeleton as HTMLElement).style.display = 'none';
+        }, 300);
+      }
+    }
+  }, []);
 
   const openLightbox = (src: string) => {
     setLightboxSrc(src);
@@ -400,6 +416,106 @@ export default function ProfileCard({
         onClose={() => setLightboxOpen(false)}
         altText="Project image preview"
       />
+    </div>
+  );
+}
+
+export function ProfileSkeletonLoader() {
+  return (
+    <div className="relative space-y-6" data-skeleton-loader>
+      {/* Top Right Corner - Walrus Badge Skeleton */}
+      <div className="absolute top-0 right-0 z-10 flex items-start gap-2">
+        <div className="h-9 w-24 rounded-lg bg-white/10 animate-pulse" />
+      </div>
+
+      {/* Main Profile Section - Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* Left Column - Avatar */}
+        <div className="lg:col-span-4 flex flex-col items-center lg:items-start space-y-4">
+          {/* Avatar Circle */}
+          <div className="w-[200px] h-[200px] rounded-full bg-white/10 animate-pulse border-4 border-white/20 shadow-2xl" />
+          
+          {/* Wallet Address Card */}
+          <div className="relative w-full max-w-[200px]">
+            <div className="bg-white/5 rounded-lg border border-white/10 p-3">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded bg-white/10 animate-pulse shrink-0" />
+                <div className="h-3 bg-white/10 rounded animate-pulse flex-1" />
+                <div className="h-3 w-3 rounded bg-white/10 animate-pulse shrink-0" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Metadata */}
+        <div className="lg:col-span-8 space-y-6 text-center lg:text-left">
+          {/* Name + Username + Badge */}
+          <div className="space-y-2">
+            {/* Name */}
+            <div className="h-12 bg-white/10 rounded animate-pulse w-2/3 mx-auto lg:mx-0" />
+            {/* Username and Role Badge */}
+            <div className="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
+              <div className="h-7 bg-white/10 rounded animate-pulse w-32" />
+              <div className="h-7 bg-white/10 rounded-full animate-pulse w-28" />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-2 max-w-3xl mx-auto lg:mx-0">
+            <div className="h-4 bg-white/10 rounded animate-pulse w-full" />
+            <div className="h-4 bg-white/10 rounded animate-pulse w-full" />
+            <div className="h-4 bg-white/10 rounded animate-pulse w-3/4" />
+          </div>
+
+          {/* Social Links */}
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-10 w-28 rounded-lg bg-white/10 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Projects Section */}
+      <div className="bg-white/5 rounded-lg md:p-4 p-0 border border-white/10">
+        {/* Projects Header */}
+        <div className="flex items-center gap-2 mb-4 px-4 pt-4 md:px-0 md:pt-0">
+          <div className="h-4 w-4 rounded bg-white/10 animate-pulse" />
+          <div className="h-5 bg-white/10 rounded animate-pulse w-32" />
+        </div>
+        
+        {/* Project Card Skeleton */}
+        <div className="bg-black/20 md:rounded-lg rounded-none md:p-4 p-4 md:border border-0 border-white/5">
+          {/* Project Header */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="h-6 bg-white/10 rounded animate-pulse w-40" />
+              <div className="h-5 w-16 rounded-full bg-white/10 animate-pulse" />
+            </div>
+            <div className="h-7 w-7 rounded bg-white/10 animate-pulse" />
+          </div>
+          
+          {/* Project Description */}
+          <div className="space-y-2 mb-3">
+            <div className="h-4 bg-white/10 rounded animate-pulse w-full" />
+            <div className="h-4 bg-white/10 rounded animate-pulse w-3/4" />
+          </div>
+          
+          {/* Project Images Grid */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="aspect-square rounded-lg bg-white/10 animate-pulse" />
+            ))}
+          </div>
+          
+          {/* Project Tags */}
+          <div className="flex flex-wrap gap-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-6 w-20 rounded-full bg-white/10 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 ---
 import MainLayout from "../../components/MainLayout.astro";
 import ProfileCard from "../../components/shared/ProfileCard";
+import { ProfileSkeletonLoader } from "../../components/shared/ProfileCard";
 import OnchainProfileWrapper from "../../components/onchain/OnchainProfileWrapper";
 import WelcomeBanner from "../../components/shared/profile/WelcomeBanner";
 import PendingVerificationBanner from "../../components/shared/profile/PendingVerificationBanner";
@@ -80,6 +81,7 @@ const dev: DeveloperUI = {
             <>
               <!-- Onchain profile (priority if walrus_blob_id exists) -->
               <div id="onchain-profile">
+                <ProfileSkeletonLoader />
                 <OnchainProfileWrapper
                   client:only="react"
                   username={dev.username}
@@ -112,6 +114,7 @@ const dev: DeveloperUI = {
           ) : (
             <!-- Offchain profile only (no walrus_blob_id) -->
             <div id="static-profile">
+              <ProfileSkeletonLoader />
               <ProfileCard
                 client:only="react"
                 variant="offchain"

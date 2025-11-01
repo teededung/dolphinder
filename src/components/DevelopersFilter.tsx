@@ -65,7 +65,7 @@ export default function DevelopersFilter({ developers }: DevelopersFilterProps) 
               : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
           }
         >
-          <img src="/walrus-token.svg" alt="Walrus" className="h-4 w-4" loading="lazy" />
+          <img src="/walrus.svg" alt="Walrus" className="h-4 w-4" loading="lazy" />
           Data on Walrus ({onchainCount})
         </Button>
       </div>
@@ -86,7 +86,7 @@ export default function DevelopersFilter({ developers }: DevelopersFilterProps) 
             {dev.walrusBlobId && (
               <div className="absolute right-3 top-3 z-10">
                 <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/20 px-2 py-1 text-xs text-emerald-300">
-                  <img src="/walrus-token.svg" alt="Walrus" className="h-3 w-3" loading="lazy" />
+                  <img src="/walrus.svg" alt="Walrus" className="h-3 w-3" loading="lazy" />
                   <span>Walrus</span>
                 </div>
               </div>

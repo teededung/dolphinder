@@ -33,7 +33,7 @@ export default function WalrusBadge({ variant, size = "md", className = "" }: Wa
           <span
             className={`inline-flex items-center rounded-full bg-emerald-500/20 border border-emerald-400/30 font-semibold text-emerald-300 shadow-lg shadow-emerald-500/10 ${sizeClasses[size]} ${className}`}
           >
-            <img src="/walrus-token.svg" alt="Walrus" className={iconSizes[size]} loading="lazy" />
+            <img src="/walrus.svg" alt="Walrus" className={iconSizes[size]} loading="lazy" />
             <span>Walrus</span>
           </span>
         </TooltipTrigger>

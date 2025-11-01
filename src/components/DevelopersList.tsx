@@ -39,18 +39,8 @@ export default function DevelopersList({ developers }: DevelopersListProps) {
             }`}
             onClick={() => (window.location.href = `/${dev.username}`)}
           >
-            {/* Onchain Badge */}
-            {dev.walrusBlobId && (
-              <div className="absolute right-3 top-3 z-10">
-                <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/20 px-2 py-1 text-xs text-emerald-300">
-                  <img src="/walrus-token.svg" alt="Walrus" className="h-3 w-3" loading="lazy" />
-                  <span>Walrus</span>
-                </div>
-              </div>
-            )}
-
             {/* Avatar */}
-            <div className="mb-4 flex justify-center">
+            <div className="relative mb-4 flex justify-center">
               <ProfileAvatar
                 src={dev.avatar}
                 name={dev.name}
@@ -62,6 +52,14 @@ export default function DevelopersList({ developers }: DevelopersListProps) {
                 }`}
                 size={80}
               />
+              {/* Onchain Badge */}
+              {dev.walrusBlobId && (
+                <div className="absolute right-1/2 -top-1 z-10 translate-x-[32px]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-400/40 bg-white shadow-lg">
+                    <img src="/walrus.svg" alt="Walrus" className="h-4 w-4" loading="lazy" />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Info */}

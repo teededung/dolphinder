@@ -1,7 +1,8 @@
 import { ExternalLink, Github, Globe, Star } from 'lucide-react';
 import { Button } from '../ui/button';
-import ProjectImageGrid from '../shared/ProjectImageGrid';
+import SimpleProjectImage from '../shared/SimpleProjectImage';
 import type { ProjectWithDeveloper } from '@/lib/showcase';
+import { getProjectImageUrl } from '@/lib/project-image-utils';
 
 interface ProjectListItemProps {
   project: ProjectWithDeveloper;
@@ -10,6 +11,7 @@ interface ProjectListItemProps {
 
 export default function ProjectListItem({ project, onClick }: ProjectListItemProps) {
   const images = project.images || [];
+  const displayImages = images.slice(0, 3); // Max 3 images for list view
   
   return (
     <div
@@ -23,21 +25,28 @@ export default function ProjectListItem({ project, onClick }: ProjectListItemPro
       <div className="flex gap-4">
         {/* Image Preview */}
         <div className="flex-shrink-0 w-40 h-24 rounded-lg overflow-hidden border border-white/10 bg-white/5">
-          {images.length > 0 ? (
-            <ProjectImageGrid
-              images={images}
-              projectName={project.name}
-              walrusQuiltId={project.walrusQuiltId}
-              onImageClick={() => {}} // No action on click in list view
-              getImageUrl={(img) => 
-                typeof img === 'string' 
-                  ? img 
-                  : (img.filename ? `/projects/${img.filename}` : null)
-              }
-              maxImages={3}
-              variant="list"
-              showWalrusBadge={false}
-            />
+          {displayImages.length > 0 ? (
+            <div className={`h-full w-full grid ${
+              displayImages.length === 1 ? 'grid-cols-1' :
+              displayImages.length === 2 ? 'grid-cols-2' :
+              'grid-cols-3'
+            }`}>
+              {displayImages.map((img, idx) => {
+                const imgSrc = getProjectImageUrl(img);
+                if (!imgSrc) return null;
+                
+                return (
+                  <SimpleProjectImage
+                    key={idx}
+                    image={img}
+                    projectName={project.name}
+                    imgIdx={idx}
+                    className="w-full h-full object-cover"
+                    showWalrusBadge={false}
+                  />
+                );
+              })}
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <span className="text-xs text-white/40">No Image</span>

@@ -51,17 +51,63 @@ export default function ProjectImageGrid({
   useEffect(() => {
     const checkImages = async () => {
       const displayImages = images.slice(0, maxImages);
-      const checks = await Promise.all(
-        displayImages.map(async (img): Promise<ImageWithSource | null> => {
-          // Generate cache key
+      
+      // Quick check if all images are cached (instant load)
+      const allCached = displayImages.every(img => {
+        const cacheKey = typeof img === 'string' 
+          ? img 
+          : (img.blobId || img.quiltPatchId || img.filename || JSON.stringify(img));
+        return cacheKey && imageCache.has(cacheKey);
+      });
+      
+      // If all cached, load instantly without showing loading spinner
+      if (allCached) {
+        const cachedResults = displayImages.map(img => {
           const cacheKey = typeof img === 'string' 
             ? img 
             : (img.blobId || img.quiltPatchId || img.filename || JSON.stringify(img));
-          
-          // Check cache first to avoid re-fetching
-          if (cacheKey && imageCache.has(cacheKey)) {
-            return imageCache.get(cacheKey)!;
-          }
+          return imageCache.get(cacheKey)!;
+        });
+        setValidImages(cachedResults);
+        setIsChecking(false);
+        console.log(`[Cache] ✓ All ${cachedResults.length} images loaded from cache instantly`);
+        return;
+      }
+      
+      // If some are cached, load them first for faster display
+      const initialResults: ImageWithSource[] = [];
+      const needsFetch: typeof displayImages = [];
+      
+      displayImages.forEach(img => {
+        const cacheKey = typeof img === 'string' 
+          ? img 
+          : (img.blobId || img.quiltPatchId || img.filename || JSON.stringify(img));
+        
+        if (cacheKey && imageCache.has(cacheKey)) {
+          initialResults.push(imageCache.get(cacheKey)!);
+          console.log('[Cache HIT] Using cached image:', cacheKey.slice(0, 20) + '...');
+        } else {
+          needsFetch.push(img);
+        }
+      });
+      
+      // Show cached images immediately
+      if (initialResults.length > 0) {
+        setValidImages(initialResults);
+        setIsChecking(false);
+        console.log(`[Cache] ✓ Showing ${initialResults.length} cached images immediately`);
+      }
+      
+      // Fetch remaining images in background
+      if (needsFetch.length > 0) {
+        const checks = await Promise.all(
+          needsFetch.map(async (img): Promise<ImageWithSource | null> => {
+            // Generate cache key
+            const cacheKey = typeof img === 'string' 
+              ? img 
+              : (img.blobId || img.quiltPatchId || img.filename || JSON.stringify(img));
+            
+            console.log('[Cache MISS] Fetching image:', cacheKey.slice(0, 20) + '...');
           
           // Check if image has blobId or quiltPatchId (Walrus onchain storage)
           const hasBlobId = typeof img !== 'string' && !!(img as ProjectImage).blobId;
@@ -79,7 +125,7 @@ export default function ProjectImageGrid({
               const response = await fetch(walrusUrl, { 
                 method: 'GET',
                 signal: controller.signal,
-                cache: 'no-cache',
+                cache: 'force-cache', // Use browser cache aggressively for Walrus images
                 mode: 'cors',
               });
               
@@ -90,11 +136,18 @@ export default function ProjectImageGrid({
                 console.log('[ProjectImageGrid] Walrus blob response content-type:', contentType);
                 if (contentType.startsWith('image/') || contentType.startsWith('application/octet-stream')) {
                   console.log('[ProjectImageGrid] ✓ Using Walrus blob:', blobId);
-                  return {
+                  const result = {
                     original: img,
                     source: walrusUrl,
                     isWalrus: true
                   };
+                  
+                  // Cache successful load
+                  if (cacheKey) {
+                    imageCache.set(cacheKey, result);
+                  }
+                  
+                  return result;
                 } else {
                   console.log('[ProjectImageGrid] ✗ Walrus blob response is not an image (content-type:', contentType, ')');
                 }
@@ -124,7 +177,7 @@ export default function ProjectImageGrid({
               const response = await fetch(quiltPatchUrl, {
                 method: 'GET',
                 signal: controller.signal,
-                cache: 'no-cache',
+                cache: 'force-cache', // Use browser cache aggressively for Walrus images
                 mode: 'cors',
               });
               
@@ -217,11 +270,13 @@ export default function ProjectImageGrid({
       const localhostCount = valid.filter(v => !v.isWalrus).length;
       
       if (walrusCount > 0 || localhostCount > 0) {
-        console.log(`[Images] ✓ Loaded ${valid.length}/${displayImages.length} (${walrusCount} Walrus, ${localhostCount} local) | Cache size: ${imageCache.size}`);
+        console.log(`[Images] ✓ Loaded ${valid.length}/${needsFetch.length} new (${walrusCount} Walrus, ${localhostCount} local) | Cache size: ${imageCache.size}`);
       }
       
-      setValidImages(valid);
+      // Append newly fetched images to cached ones
+      setValidImages(prev => [...prev, ...valid]);
       setIsChecking(false);
+    }
     };
     
     checkImages();
@@ -240,8 +295,8 @@ export default function ProjectImageGrid({
     };
   }, [blobUrls]);
   
-  // Show loading state while checking
-  if (isChecking) {
+  // Show loading state only if checking AND no cached images yet
+  if (isChecking && validImages.length === 0) {
     return (
       <div className="w-full flex items-center justify-center py-4">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/60"></div>
@@ -281,6 +336,7 @@ export default function ProjectImageGrid({
           src={source}
           alt={`${projectName} - Image ${imgIdx + 1}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
           onLoad={() => setIsLoading(false)}
           onError={(e) => {
             const target = e.target as HTMLImageElement;

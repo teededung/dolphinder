@@ -76,6 +76,7 @@ function ProjectImageWithFallback({
         src={imgSrc}
         alt={`${projectName} - Image ${imgIdx + 1}`}
         className="h-16 w-16 object-cover rounded-md border border-gray-200"
+        loading="lazy"
         onLoad={() => setIsLoading(false)}
         onError={(e) => {
           console.error(`Failed to load image: ${imgSrc}`);
@@ -213,11 +214,18 @@ function normalizeProjects(rawProjects: any[]): Project[] {
 }
 
 export default function ProjectsManager({ initialProjects = [], onProjectsChange }: ProjectsManagerProps) {
-  const [projects, setProjects] = useState<Project[]>(() => normalizeProjects(initialProjects));
+  const [projects, setProjects] = useState<Project[]>(() => {
+    console.log("[ProjectsManager] Initial projects:", initialProjects);
+    const normalized = normalizeProjects(initialProjects);
+    console.log("[ProjectsManager] Normalized projects:", normalized);
+    return normalized;
+  });
   
   // Update projects when initialProjects changes (e.g., after page reload)
   useEffect(() => {
+    console.log("[ProjectsManager] useEffect - initialProjects changed:", initialProjects);
     const normalized = normalizeProjects(initialProjects);
+    console.log("[ProjectsManager] useEffect - normalized:", normalized);
     setProjects(normalized);
   }, [JSON.stringify(initialProjects)]);
   const [editingId, setEditingId] = useState<string | null>(null);

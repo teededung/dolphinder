@@ -93,11 +93,32 @@ function ProjectsManagerLoader({
         // Fetch JSON data from Walrus
         const json = await fetchJson<OnchainData>(blobId);
         
-        // IMPORTANT: Only use onchain projects if they exist AND have length > 0
-        // Otherwise, prioritize database projects (user may have edited locally)
+        // Merge onchain and database projects
+        // Priority: onchain version wins if same project ID exists
+        // Otherwise, keep all unique projects from both sources
         if (json?.projects && Array.isArray(json.projects) && json.projects.length > 0) {
-          setProjects(json.projects);
+          const onchainProjects = json.projects;
+          const databaseProjects = initialProjects || [];
+          
+          // Get all onchain project IDs
+          const onchainIds = new Set(onchainProjects.map((p: any) => p.id));
+          
+          // Get database projects that are NOT on onchain (i.e., not synced yet)
+          const uniqueDatabaseProjects = databaseProjects.filter((p: any) => !onchainIds.has(p.id));
+          
+          // Merge: onchain projects + unique database projects
+          const mergedProjects = [...onchainProjects, ...uniqueDatabaseProjects];
+          
+          console.log('[ProjectsManagerWrapper] Merged projects:', {
+            onchain: onchainProjects.length,
+            database: databaseProjects.length,
+            unique: uniqueDatabaseProjects.length,
+            total: mergedProjects.length
+          });
+          
+          setProjects(mergedProjects);
         } else {
+          // No onchain projects, use all database projects
           setProjects(initialProjects);
         }
       } catch (e: any) {

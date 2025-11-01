@@ -2,44 +2,16 @@ import { useState } from 'react';
 import { ExternalLink, Github, Globe, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { getQuiltPatchUrl } from '@/lib/walrus-quilt';
-import { getWalrusImageUrl } from '@/lib/walrus';
 import { ProfileAvatar } from '../shared/ProfileAvatar';
-import ProjectImageGrid from '../shared/ProjectImageGrid';
+import SimpleProjectImage from '../shared/SimpleProjectImage';
 import LightboxDialog from '../shared/LightboxDialog';
 import type { ProjectWithDeveloper } from '@/lib/showcase';
-import type { ProjectImage } from '@/types/project';
+import { getProjectImageUrl } from '@/lib/project-image-utils';
 
 interface ProjectModalProps {
   project: ProjectWithDeveloper | null;
   isOpen: boolean;
   onClose: () => void;
-}
-
-/**
- * Get image URL from project image (prioritize Walrus)
- */
-function getImageUrl(image: string | ProjectImage): string | null {
-  if (typeof image === 'string') {
-    return image;
-  }
-  
-  // Priority 1: blobId (direct Walrus blob)
-  if (image.blobId) {
-    return getWalrusImageUrl(image.blobId);
-  }
-  
-  // Priority 2: quiltPatchId (Walrus quilt patch via HTTP API)
-  if (image.quiltPatchId) {
-    return getQuiltPatchUrl(image.quiltPatchId);
-  }
-  
-  // Priority 3: filename (localhost fallback)
-  if (image.filename) {
-    return `/projects/${image.filename}`;
-  }
-  
-  return null;
 }
 
 export default function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
@@ -54,6 +26,7 @@ export default function ProjectModal({ project, isOpen, onClose }: ProjectModalP
   };
 
   const images = project.images || [];
+  const displayImages = images.slice(0, 5); // Max 5 images
 
   return (
     <>
@@ -70,18 +43,40 @@ export default function ProjectModal({ project, isOpen, onClose }: ProjectModalP
 
           <div className="space-y-6 pt-2">
             {/* Images Gallery */}
-            {images.length > 0 && (
+            {displayImages.length > 0 && (
               <div className="space-y-3 bg-slate-800/80 rounded-lg p-4 border border-slate-700">
                 <h4 className="text-sm font-semibold text-white/90">Images</h4>
-                <ProjectImageGrid
-                  images={images}
-                  projectName={project.name}
-                  walrusQuiltId={project.walrusQuiltId}
-                  onImageClick={openLightbox}
-                  getImageUrl={getImageUrl}
-                  maxImages={5}
-                  variant="default"
-                />
+                <div className={`grid gap-2 ${
+                  displayImages.length === 1 ? 'grid-cols-1' :
+                  displayImages.length === 2 ? 'grid-cols-2' :
+                  'grid-cols-3'
+                }`}>
+                  {displayImages.map((img, imgIdx) => {
+                    const imgSrc = getProjectImageUrl(img);
+                    if (!imgSrc) return null;
+                    
+                    return (
+                      <div 
+                        key={imgIdx}
+                        className={`overflow-hidden rounded-lg border border-slate-600 ${
+                          displayImages.length === 1 ? 'aspect-video' : 'aspect-square'
+                        }`}
+                      >
+                        <SimpleProjectImage
+                          image={img}
+                          projectName={project.name}
+                          imgIdx={imgIdx}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          showWalrusBadge={true}
+                          onClick={() => {
+                            const src = getProjectImageUrl(img);
+                            if (src) openLightbox(src);
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

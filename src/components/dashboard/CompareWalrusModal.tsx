@@ -129,26 +129,48 @@ export default function CompareWalrusModal({
           // Prepare images for quilt upload with size tracking
           const imagesToUpload = await Promise.all(
             project.images.map(async (img: any, idx: number) => {
-              // Get image path: string (old format) or reconstruct from filename (new format)
-              const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
-              if (!imgPath || !imgPath.startsWith('/projects/')) {
+              // If image is already a ProjectImage with quiltPatchId, skip upload
+              if (typeof img === 'object' && img.quiltPatchId) {
+                console.log(`[Quilt Skip] Image ${idx} already has quiltPatchId: ${img.quiltPatchId}`);
+                return null;
+              }
+
+              // Get image path/URL: string (old format), Supabase URL, or reconstruct from filename (new format)
+              let imgPath: string | null = null;
+              if (typeof img === 'string') {
+                imgPath = img;
+              } else if (img.filename) {
+                imgPath = `/projects/${img.filename}`;
+              }
+
+              if (!imgPath) {
+                console.warn(`[Quilt Skip] No valid image path for image ${idx}`);
                 return null;
               }
 
               try {
-                // Fetch image from local and convert to base64
+                // Fetch image (works for both local paths and Supabase URLs)
                 const response = await fetch(imgPath);
+                if (!response.ok) {
+                  throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const blob = await response.blob();
                 const base64 = await blobToBase64(blob);
+
+                // Extract format from URL/path
+                const format = imgPath.split('.').pop()?.split('?')[0] || 'jpg';
+
+                console.log(`[Quilt Prepare] Image ${idx} (${(blob.size / 1024).toFixed(2)} KB) ready for upload`);
 
                 return {
                   data: base64,
                   identifier: `${project.id}_img${idx}`,
                   size: blob.size,
-                  format: imgPath.split('.').pop() || 'jpg'
+                  format: format
                 };
               } catch (err) {
-                console.warn(`Failed to fetch project image ${imgPath}:`, err);
+                console.error(`[Quilt Error] Failed to fetch image ${imgPath}:`, err);
                 return null;
               }
             })
@@ -156,30 +178,45 @@ export default function CompareWalrusModal({
 
           const validImages = imagesToUpload.filter(Boolean) as { data: string; identifier: string; size: number; format: string }[];
           if (validImages.length === 0) {
+            console.log(`[Quilt Skip] Project "${project.name}": No images to upload`);
             return project;
           }
 
           try {
             // Upload to quilt
+            console.log(`[Quilt Upload] Project "${project.name}": Uploading ${validImages.length} images...`);
             const quiltResult = await uploadQuilt(validImages);
 
-            console.log(`[Quilt Upload] Project "${project.name}": ${validImages.length} images uploaded to quilt ${quiltResult.quiltId}`);
+            console.log(`[Quilt Success] Project "${project.name}": ${validImages.length} images uploaded to quilt ${quiltResult.quiltId}`);
 
-            // Update project with quilt IDs (save filename only)
+            // Update project with quilt IDs
             return {
               ...project,
               walrusQuiltId: quiltResult.quiltId,
               images: project.images.map((img: any, idx: number) => {
-                // Get image path: string (old format) or reconstruct from filename (new format)
-                const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
+                // If image already has quiltPatchId, keep it
+                if (typeof img === 'object' && img.quiltPatchId) {
+                  return img;
+                }
+
+                // Find corresponding patch result
                 const patchResult = quiltResult.patches.find(p => p.identifier === `${project.id}_img${idx}`);
                 const imageData = validImages.find(v => v.identifier === `${project.id}_img${idx}`);
                 
-                // Extract filename from path (e.g., "/projects/abc.jpg" -> "abc.jpg")
-                const filename = imgPath ? imgPath.split('/').pop() : undefined;
+                // Get original image path
+                const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
+                
+                // Extract filename from path or URL
+                let filename: string | undefined = undefined;
+                if (imgPath) {
+                  // For URLs: extract filename from last segment
+                  // For local paths: extract filename after last /
+                  const segments = imgPath.split('/');
+                  filename = segments[segments.length - 1].split('?')[0]; // Remove query params
+                }
                 
                 return {
-                  filename: filename,              // Save only filename, not full path
+                  filename: filename,
                   quiltPatchId: patchResult?.patchId || undefined,
                   metadata: {
                     size: imageData?.size || 0,
@@ -190,7 +227,7 @@ export default function CompareWalrusModal({
               })
             };
           } catch (err) {
-            console.error(`Failed to upload quilt for project "${project.name}":`, err);
+            console.error(`[Quilt Error] Failed to upload quilt for project "${project.name}":`, err);
             // Keep original project if quilt upload fails
             return project;
           }

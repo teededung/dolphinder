@@ -59,12 +59,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       // Convert file to buffer
       const buffer = Buffer.from(await avatarFile.arrayBuffer());
       
-      // Upload new avatar
-      const newAvatarPath = await uploadAvatar(buffer, avatarFile.name, developer.username);
+      // Upload new avatar - pass supabase client and userId for Supabase Storage
+      const newAvatarPath = await uploadAvatar(
+        buffer, 
+        avatarFile.name, 
+        developer.username,
+        supabase,
+        user.id
+      );
       
-      // Delete old avatar if exists and is local file
-      if (developer.avatar && developer.avatar.startsWith('/avatar/')) {
-        deleteOldAvatar(developer.avatar);
+      // Delete old avatar if exists
+      if (developer.avatar) {
+        await deleteOldAvatar(developer.avatar, supabase);
       }
 
       return new Response(

@@ -48,17 +48,90 @@ export async function downloadAvatar(url: string, username: string): Promise<str
 }
 
 /**
+ * Upload avatar to Supabase Storage
+ * @param supabase - Supabase client instance
+ * @param fileBuffer - File buffer
+ * @param filename - Original filename
+ * @param username - Username to use in saved filename
+ * @param userId - User ID for folder organization
+ * @returns Public URL to uploaded avatar
+ */
+export async function uploadAvatarToStorage(
+  supabase: SupabaseClient,
+  fileBuffer: Buffer,
+  filename: string,
+  username: string,
+  userId: string
+): Promise<string> {
+  try {
+    const ext = path.extname(filename).toLowerCase().replace('.', '') || 'png';
+    const timestamp = Date.now();
+    const newFilename = `${username}-${timestamp}.${ext}`;
+    
+    // Use userId to organize files in storage
+    const storagePath = `${userId}/${newFilename}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(storagePath, fileBuffer, {
+        contentType: `image/${ext}`,
+        upsert: false,
+      });
+
+    if (error) {
+      throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(storagePath);
+
+    return urlData.publicUrl;
+  } catch (error: any) {
+    console.error(`Error uploading avatar to storage for ${username}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Upload avatar from file and save to public/avatar/
  * @param fileBuffer - File buffer
  * @param filename - Original filename
  * @param username - Username to use in saved filename
- * @returns Local path to saved avatar
+ * @param supabase - Optional Supabase client (preferred for serverless)
+ * @param userId - Optional user ID (required when using Supabase Storage)
+ * @returns Local path or public URL to saved avatar
  */
 export async function uploadAvatar(
   fileBuffer: Buffer,
   filename: string,
-  username: string
+  username: string,
+  supabase?: SupabaseClient,
+  userId?: string
 ): Promise<string> {
+  // Prefer Supabase Storage if client and userId are provided
+  // This works on both serverless and local dev
+  if (supabase && userId) {
+    try {
+      return await uploadAvatarToStorage(supabase, fileBuffer, filename, username, userId);
+    } catch (error: any) {
+      // If Supabase Storage fails and we're not on serverless, fallback to filesystem
+      if (!isServerless) {
+        console.warn('Supabase Storage upload failed, falling back to filesystem:', error.message);
+      } else {
+        // On serverless, we must use Supabase Storage
+        throw error;
+      }
+    }
+  }
+
+  // Fallback to filesystem (local development only)
+  if (isServerless) {
+    throw new Error('Supabase client and userId are required for serverless uploads');
+  }
+
   try {
     const ext = path.extname(filename).toLowerCase().replace('.', '') || 'png';
     const timestamp = Date.now();
@@ -83,15 +156,69 @@ export async function uploadAvatar(
 }
 
 /**
- * Delete old avatar file
- * @param avatarPath - Path to avatar file (e.g., /avatar/username-avatar.png)
+ * Delete avatar from Supabase Storage
+ * @param supabase - Supabase client instance
+ * @param avatarUrl - Full URL to the avatar in Supabase Storage
  */
-export function deleteOldAvatar(avatarPath: string): void {
+export async function deleteAvatarFromStorage(
+  supabase: SupabaseClient,
+  avatarUrl: string
+): Promise<void> {
   try {
-    if (!avatarPath || !avatarPath.startsWith('/avatar/')) {
+    // Extract path from Supabase Storage URL
+    // URL format: https://<project>.supabase.co/storage/v1/object/public/avatars/<path>
+    const urlMatch = avatarUrl.match(/\/avatars\/(.+)$/);
+    if (!urlMatch) {
+      console.warn(`Invalid Supabase Storage URL format: ${avatarUrl}`);
       return;
     }
 
+    const storagePath = urlMatch[1];
+
+    const { error } = await supabase.storage
+      .from('avatars')
+      .remove([storagePath]);
+
+    if (error) {
+      console.error(`Error deleting avatar from storage: ${error.message}`);
+    }
+  } catch (error) {
+    console.error(`Error deleting avatar ${avatarUrl}:`, error);
+    // Don't throw - deleting old avatar is not critical
+  }
+}
+
+/**
+ * Delete old avatar file - handles both filesystem and Supabase Storage
+ * @param avatarPath - Path to avatar file (e.g., /avatar/username-avatar.png) or Supabase Storage URL
+ * @param supabase - Optional Supabase client (required for serverless)
+ */
+export async function deleteOldAvatar(
+  avatarPath: string,
+  supabase?: SupabaseClient
+): Promise<void> {
+  // If it's a Supabase Storage URL (starts with http/https)
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    if (!supabase) {
+      console.warn('Cannot delete from Supabase Storage: Supabase client not provided');
+      return;
+    }
+    await deleteAvatarFromStorage(supabase, avatarPath);
+    return;
+  }
+
+  // Local filesystem path
+  if (!avatarPath.startsWith('/avatar/')) {
+    return;
+  }
+
+  // Only try filesystem delete if not on serverless
+  if (isServerless) {
+    console.warn('Cannot delete from filesystem on serverless environment');
+    return;
+  }
+
+  try {
     const filename = path.basename(avatarPath);
     const publicDir = path.join(__dirname, '../../public/avatar');
     const filePath = path.join(publicDir, filename);

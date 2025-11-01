@@ -5,11 +5,12 @@ import CopyButton from './CopyButton';
 import EditButton from './profile/EditButton';
 import { ProfileAvatar } from './ProfileAvatar';
 import WalrusBadge from './WalrusBadge';
-import ProjectImageGrid from './ProjectImageGrid';
+import SimpleProjectImage from './SimpleProjectImage';
 import LightboxDialog from './LightboxDialog';
 import type { Project } from '../../types/project';
 import type { Certificate } from '../../types/certificate';
 import { QRCodeSVG } from 'qrcode.react';
+import { getProjectImageUrl } from '../../lib/project-image-utils';
 
 type ProfileCardProps = {
   variant: 'onchain' | 'offchain';
@@ -333,22 +334,41 @@ export default function ProfileCard({
                     <p className="text-sm text-white/70 mb-3 leading-relaxed">{projectDescription}</p>
                   )}
                   
-                  {/* Images Gallery - Unified Grid Layout */}
+                  {/* Images Gallery - Simple Grid Layout */}
                   {allImages.length > 0 && (
                     <div className="mb-3 md:mx-0 -mx-4">
-                      <ProjectImageGrid
-                        images={allImages}
-                        projectName={projectName}
-                        walrusQuiltId={walrusQuiltId}
-                        onImageClick={openLightbox}
-                        getImageUrl={(img) => 
-                          typeof img === 'string' 
-                            ? img 
-                            : (img.filename ? `/projects/${img.filename}` : null)
-                        }
-                        maxImages={5}
-                        variant="default"
-                      />
+                      {/* Grid layout based on image count */}
+                      <div className={`grid gap-2 ${
+                        allImages.length === 1 ? 'grid-cols-1' :
+                        allImages.length === 2 ? 'grid-cols-2' :
+                        'grid-cols-3'
+                      }`}>
+                        {allImages.map((img, imgIdx) => {
+                          const imgSrc = getProjectImageUrl(img);
+                          if (!imgSrc) return null;
+                          
+                          return (
+                            <div 
+                              key={imgIdx}
+                              className={`overflow-hidden rounded-lg border border-white/10 ${
+                                allImages.length === 1 ? 'aspect-video' : 'aspect-square'
+                              }`}
+                            >
+                              <SimpleProjectImage
+                                image={img}
+                                projectName={projectName}
+                                imgIdx={imgIdx}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                showWalrusBadge={true}
+                                onClick={() => {
+                                  const src = getProjectImageUrl(img);
+                                  if (src) openLightbox(src);
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 

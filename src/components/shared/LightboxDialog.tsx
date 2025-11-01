@@ -1,4 +1,5 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { XIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +50,13 @@ export default function LightboxDialog({
             e.preventDefault();
           }}
         >
+          {/* Accessible title for screen readers */}
+          <VisuallyHidden>
+            <DialogPrimitive.Title>
+              {altText || 'Image Preview'}
+            </DialogPrimitive.Title>
+          </VisuallyHidden>
+
           {/* Close button */}
           <DialogPrimitive.Close
             className={cn(

@@ -58,7 +58,7 @@ export default function ProjectImageGrid({
             ? img 
             : (img.blobId || img.quiltPatchId || img.filename || JSON.stringify(img));
           
-          // Check cache first - nếu đã load thành công thì return ngay
+          // Check cache first to avoid re-fetching
           if (cacheKey && imageCache.has(cacheKey)) {
             return imageCache.get(cacheKey)!;
           }
@@ -319,12 +319,16 @@ export default function ProjectImageGrid({
   };
 
   // Render single image button
-  const renderImageButton = (imgWithSource: ImageWithSource, imgIdx: number, className: string) => {
+  const renderImageButton = (imgWithSource: ImageWithSource, imgIdx: number, className: string, isListVariant = false) => {
     return (
       <button
         key={imgIdx}
         type="button"
-        className={`relative overflow-hidden rounded-lg border border-white/10 hover:border-white/20 transition-all group ${className}`}
+        className={`relative overflow-hidden transition-all group ${
+          isListVariant 
+            ? '' // No border/rounded for list variant to allow images to fill completely
+            : 'rounded-lg border border-white/10 hover:border-white/20'
+        } ${className}`}
         onClick={() => {
           if (onImageClick) {
             onImageClick(imgWithSource.source);
@@ -338,6 +342,21 @@ export default function ProjectImageGrid({
 
   // Layout logic - use validImages
   const imageCount = validImages.length;
+
+  // List variant: horizontal layout with no gap (for 1, 2, or 3+ images)
+  if (variant === 'list') {
+    return (
+      <div className={`h-full w-full ${
+        imageCount === 1 ? 'grid grid-cols-1' :
+        imageCount === 2 ? 'grid grid-cols-2' :
+        'grid grid-cols-3'
+      }`}>
+        {validImages.map((img, idx) => 
+          renderImageButton(img, idx, 'h-full w-full', true)
+        )}
+      </div>
+    );
+  }
 
   // Single image: full width
   if (imageCount === 1) {
@@ -354,22 +373,6 @@ export default function ProjectImageGrid({
       <div className="grid grid-cols-2 gap-2">
         {validImages.map((img, idx) => 
           renderImageButton(img, idx, variant === 'compact' ? 'aspect-video' : 'aspect-square')
-        )}
-      </div>
-    );
-  }
-
-  // Three or more images: layout depends on variant
-  if (variant === 'list') {
-    // List view: horizontal layout with no gap
-    return (
-      <div className={`h-full ${
-        imageCount === 1 ? 'grid grid-cols-1' :
-        imageCount === 2 ? 'grid grid-cols-2 gap-0.5' :
-        'grid grid-cols-3 gap-0.5'
-      }`}>
-        {validImages.map((img, idx) => 
-          renderImageButton(img, idx, 'h-full')
         )}
       </div>
     );

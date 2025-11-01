@@ -57,8 +57,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Convert file to buffer
     const buffer = Buffer.from(await imageFile.arrayBuffer());
     
-    // Upload image
-    const imagePath = await uploadProjectImage(buffer, imageFile.name, projectId);
+    // Upload image - pass supabase client and userId for serverless environments
+    const imagePath = await uploadProjectImage(
+      buffer, 
+      imageFile.name, 
+      projectId,
+      supabase,
+      user.id
+    );
 
     return new Response(
       JSON.stringify({ 

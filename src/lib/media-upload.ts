@@ -1,9 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Check if running on serverless (Netlify, Vercel, etc.)
+// On serverless, filesystem writes are not allowed, so we use Supabase Storage
+const isServerless = typeof process !== 'undefined' && 
+  (process.env.NETLIFY || process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env._HANDLER);
 
 /**
  * Download avatar from external URL and save to public/avatar/
@@ -118,17 +124,92 @@ function sanitizeProjectId(projectId: string): string {
 }
 
 /**
- * Upload project image and save to public/projects/
+ * Upload project image to Supabase Storage
+ * @param supabase - Supabase client instance
  * @param fileBuffer - File buffer
  * @param filename - Original filename
  * @param projectId - Project ID to use in saved filename
- * @returns Local path to saved image
+ * @param userId - User ID for folder organization
+ * @returns Public URL to uploaded image
+ */
+export async function uploadProjectImageToStorage(
+  supabase: SupabaseClient,
+  fileBuffer: Buffer,
+  filename: string,
+  projectId: string,
+  userId: string
+): Promise<string> {
+  try {
+    const ext = path.extname(filename).toLowerCase().replace('.', '') || 'png';
+    const timestamp = Date.now();
+    // Sanitize projectId to avoid long filenames
+    const sanitizedId = sanitizeProjectId(projectId);
+    const newFilename = `${sanitizedId}-${timestamp}.${ext}`;
+    
+    // Use userId to organize files in storage
+    const storagePath = `${userId}/${newFilename}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('projects')
+      .upload(storagePath, fileBuffer, {
+        contentType: `image/${ext}`,
+        upsert: false,
+      });
+
+    if (error) {
+      throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('projects')
+      .getPublicUrl(storagePath);
+
+    return urlData.publicUrl;
+  } catch (error: any) {
+    console.error(`Error uploading project image to storage for ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Upload project image - uses Supabase Storage when available, filesystem as fallback
+ * @param fileBuffer - File buffer
+ * @param filename - Original filename
+ * @param projectId - Project ID to use in saved filename
+ * @param supabase - Optional Supabase client (preferred for serverless)
+ * @param userId - Optional user ID (required when using Supabase Storage)
+ * @returns Local path or public URL to saved image
  */
 export async function uploadProjectImage(
   fileBuffer: Buffer,
   filename: string,
-  projectId: string
+  projectId: string,
+  supabase?: SupabaseClient,
+  userId?: string
 ): Promise<string> {
+  // Prefer Supabase Storage if client and userId are provided
+  // This works on both serverless and local dev
+  if (supabase && userId) {
+    try {
+      return await uploadProjectImageToStorage(supabase, fileBuffer, filename, projectId, userId);
+    } catch (error: any) {
+      // If Supabase Storage fails and we're not on serverless, fallback to filesystem
+      if (!isServerless) {
+        console.warn('Supabase Storage upload failed, falling back to filesystem:', error.message);
+      } else {
+        // On serverless, we must use Supabase Storage
+        throw error;
+      }
+    }
+  }
+
+  // Fallback to filesystem (local development only)
+  if (isServerless) {
+    throw new Error('Supabase client and userId are required for serverless uploads');
+  }
+
   try {
     const ext = path.extname(filename).toLowerCase().replace('.', '') || 'png';
     const timestamp = Date.now();
@@ -155,15 +236,69 @@ export async function uploadProjectImage(
 }
 
 /**
- * Delete project image file
- * @param imagePath - Path to image file (e.g., /projects/projectId-timestamp.png)
+ * Delete project image from Supabase Storage
+ * @param supabase - Supabase client instance
+ * @param imageUrl - Full URL to the image in Supabase Storage
  */
-export function deleteProjectImage(imagePath: string): void {
+export async function deleteProjectImageFromStorage(
+  supabase: SupabaseClient,
+  imageUrl: string
+): Promise<void> {
   try {
-    if (!imagePath || !imagePath.startsWith('/projects/')) {
+    // Extract path from Supabase Storage URL
+    // URL format: https://<project>.supabase.co/storage/v1/object/public/projects/<path>
+    const urlMatch = imageUrl.match(/\/projects\/(.+)$/);
+    if (!urlMatch) {
+      console.warn(`Invalid Supabase Storage URL format: ${imageUrl}`);
       return;
     }
 
+    const storagePath = urlMatch[1];
+
+    const { error } = await supabase.storage
+      .from('projects')
+      .remove([storagePath]);
+
+    if (error) {
+      console.error(`Error deleting project image from storage: ${error.message}`);
+    }
+  } catch (error) {
+    console.error(`Error deleting project image ${imageUrl}:`, error);
+    // Don't throw - deleting old image is not critical
+  }
+}
+
+/**
+ * Delete project image file - handles both filesystem and Supabase Storage
+ * @param imagePath - Path to image file (e.g., /projects/projectId-timestamp.png) or Supabase Storage URL
+ * @param supabase - Optional Supabase client (required for serverless)
+ */
+export async function deleteProjectImage(
+  imagePath: string,
+  supabase?: SupabaseClient
+): Promise<void> {
+  // If it's a Supabase Storage URL (starts with http/https)
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    if (!supabase) {
+      console.warn('Cannot delete from Supabase Storage: Supabase client not provided');
+      return;
+    }
+    await deleteProjectImageFromStorage(supabase, imagePath);
+    return;
+  }
+
+  // Local filesystem path
+  if (!imagePath.startsWith('/projects/')) {
+    return;
+  }
+
+  // Only try filesystem delete if not on serverless
+  if (isServerless) {
+    console.warn('Cannot delete from filesystem on serverless environment');
+    return;
+  }
+
+  try {
     const filename = path.basename(imagePath);
     const publicDir = path.join(__dirname, '../../public/projects');
     const filePath = path.join(publicDir, filename);

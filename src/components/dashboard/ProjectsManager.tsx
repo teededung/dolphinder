@@ -44,6 +44,18 @@ function ProjectImageWithFallback({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Add timeout to hide loading after 5 seconds (fallback for cached images)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn(`Image loading timeout, forcing display: ${imgSrc}`);
+        setIsLoading(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [imgSrc, isLoading]);
+
   if (imageError) {
     return (
       <div className="relative group">
@@ -108,6 +120,10 @@ function ProjectImageWithFallback({
  */
 function getImageSrc(img: string | ProjectImage): string | null {
   if (typeof img === 'string') {
+    // If it's already a full URL, return as is
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+      return img;
+    }
     return img;
   }
   
@@ -121,8 +137,13 @@ function getImageSrc(img: string | ProjectImage): string | null {
     return getQuiltPatchUrl(img.quiltPatchId);
   }
   
-  // Priority 3: filename (localhost fallback)
+  // Priority 3: filename (Supabase Storage or local)
   if (img.filename) {
+    // If filename is already a full URL (from Supabase Storage), return as is
+    if (img.filename.startsWith('http://') || img.filename.startsWith('https://')) {
+      return img.filename;
+    }
+    // Otherwise, assume it's a local path
     return `/projects/${img.filename}`;
   }
   
@@ -249,6 +270,8 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
   const [previewImages, setPreviewImages] = useState<Map<number, string>>(new Map()); // Store blob URLs for preview
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<number>(0); // Track number of images being uploaded
 
   // Initialize editing mode
   const startEdit = (project: Project) => {
@@ -293,113 +316,162 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     }
   };
 
-  // Handle image upload
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  // Handle image upload (supports multiple files)
+  const handleImageUpload = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     const currentImages = formData.images || [];
+    const filesArray = Array.from(files);
     
-    // Check max 5 images
-    if (currentImages.length >= 5) {
+    // Check max 5 images total
+    const availableSlots = 5 - currentImages.length;
+    if (availableSlots <= 0) {
       setError('Maximum 5 images allowed');
       setTimeout(() => setError(''), 3000);
       return;
     }
 
-    const file = files[0];
-
-    // Validate file size (max 3MB)
-    if (file.size > 3 * 1024 * 1024) {
-      setError('Image size must be less than 3MB');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setError('Invalid file type. Supported: JPG, PNG, GIF, WebP');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // Create blob URL for immediate preview
-    const blobUrl = URL.createObjectURL(file);
-    const previewIndex = currentImages.length;
-    setPreviewImages(prev => new Map(prev).set(previewIndex, blobUrl));
+    // Limit files to available slots
+    const filesToUpload = filesArray.slice(0, availableSlots);
     
-    // Add placeholder to images array for preview
-    const placeholderPath = `blob:${previewIndex}`;
-    const tempImages = [...currentImages, placeholderPath];
-    setFormData({ 
-      ...formData, 
-      images: tempImages 
-    });
+    if (filesArray.length > availableSlots) {
+      setError(`Only uploading ${availableSlots} image(s) to stay within limit of 5`);
+      setTimeout(() => setError(''), 3000);
+    }
 
-    setUploadingImage(true);
-    setError('');
-
-    try {
-      // Generate temporary project ID if new project
-      const projectId = formData.id || editingId || crypto.randomUUID();
-      
-      const uploadFormData = new FormData();
-      uploadFormData.append('image', file);
-      uploadFormData.append('projectId', projectId);
-
-      const response = await fetch('/api/projects/upload-image', {
-        method: 'POST',
-        body: uploadFormData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Remove preview on error
-        setPreviewImages(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(previewIndex);
-          return newMap;
-        });
-        setFormData({ ...formData, images: currentImages });
-        throw new Error(result.error || 'Failed to upload image');
+    // Validate all files before uploading
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    for (const file of filesToUpload) {
+      // Validate file size (max 3MB)
+      if (file.size > 3 * 1024 * 1024) {
+        setError(`${file.name}: Image size must be less than 3MB`);
+        setTimeout(() => setError(''), 3000);
+        return;
       }
 
-      // Replace placeholder with actual server path
-      const imagePath = result.imagePath;
-      const finalImages = [...currentImages, imagePath];
-      setFormData({ 
-        ...formData, 
-        id: projectId,
-        images: finalImages 
-      });
-      
-      // Clean up blob URL after a short delay to ensure server image loads
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-        setPreviewImages(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(previewIndex);
-          return newMap;
-        });
-      }, 2000);
+      // Validate file type
+      if (!validTypes.includes(file.type)) {
+        setError(`${file.name}: Invalid file type. Supported: JPG, PNG, GIF, WebP`);
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+    }
 
-    } catch (err: any) {
-      console.error('Error uploading image:', err);
-      setError(err.message || 'Failed to upload image');
-      // Clean up preview on error
-      URL.revokeObjectURL(blobUrl);
-      setPreviewImages(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(previewIndex);
-        return newMap;
-      });
-      setFormData({ ...formData, images: currentImages });
-    } finally {
-      setUploadingImage(false);
-      // Reset file input
-      e.target.value = '';
+    setError('');
+    setUploadQueue(filesToUpload.length);
+
+    // Upload files sequentially
+    let uploadedCount = 0;
+    let tempImages = [...currentImages];
+    const projectId = formData.id || editingId || crypto.randomUUID();
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      const previewIndex = currentImages.length + i;
+
+      try {
+        // Create blob URL for immediate preview
+        const blobUrl = URL.createObjectURL(file);
+        setPreviewImages(prev => new Map(prev).set(previewIndex, blobUrl));
+        
+        // Add placeholder to images array for preview
+        const placeholderPath = `blob:${previewIndex}`;
+        tempImages.push(placeholderPath);
+        setFormData({ 
+          ...formData, 
+          images: [...tempImages] 
+        });
+
+        // Upload to server
+        const uploadFormData = new FormData();
+        uploadFormData.append('image', file);
+        uploadFormData.append('projectId', projectId);
+
+        const response = await fetch('/api/projects/upload-image', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Remove preview on error
+          setPreviewImages(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(previewIndex);
+            return newMap;
+          });
+          tempImages = tempImages.filter((_, idx) => idx !== previewIndex);
+          throw new Error(result.error || 'Failed to upload image');
+        }
+
+        // Replace placeholder with actual server path
+        const imagePath = result.imagePath;
+        tempImages[previewIndex] = imagePath;
+        
+        setFormData({ 
+          ...formData, 
+          id: projectId,
+          images: [...tempImages] 
+        });
+        
+        uploadedCount++;
+
+        // Clean up blob URL after a short delay
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+          setPreviewImages(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(previewIndex);
+            return newMap;
+          });
+        }, 2000);
+
+      } catch (err: any) {
+        console.error(`Error uploading ${file.name}:`, err);
+        setError(err.message || `Failed to upload ${file.name}`);
+      }
+    }
+
+    setUploadQueue(0);
+    
+    if (uploadedCount > 0) {
+      setSuccess(`Successfully uploaded ${uploadedCount} image(s)`);
+      setTimeout(() => setSuccess(''), 3000);
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      handleImageUpload(files);
+    }
+    // Reset file input
+    e.target.value = '';
+  };
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageUpload(files);
     }
   };
 
@@ -498,8 +570,34 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     setProjects(updatedProjects);
     onProjectsChange?.(updatedProjects);
     
-    // Save to database immediately after deletion
+    // Delete project and associated images
     try {
+      // Step 1: Delete associated images from Supabase Storage (if any)
+      if (projectToDelete.images && projectToDelete.images.length > 0) {
+        console.log('[ProjectsManager] Deleting project images:', projectToDelete.images.length);
+        
+        try {
+          const deleteImagesResponse = await fetch('/api/projects/delete-images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: projectToDelete.images }),
+          });
+
+          const deleteImagesResult = await deleteImagesResponse.json();
+
+          if (deleteImagesResponse.ok) {
+            console.log('[ProjectsManager] Images deleted:', deleteImagesResult);
+          } else {
+            console.warn('[ProjectsManager] Failed to delete some images:', deleteImagesResult);
+            // Continue with project deletion even if image deletion fails
+          }
+        } catch (imgErr: any) {
+          console.error('[ProjectsManager] Error deleting images:', imgErr);
+          // Continue with project deletion even if image deletion fails
+        }
+      }
+
+      // Step 2: Update projects in database
       const response = await fetch('/api/profile/update-projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -513,12 +611,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
       }
 
       setSuccess('Project deleted successfully!');
-      
-      // Delete associated images from server (optional cleanup)
-      if (projectToDelete.images && projectToDelete.images.length > 0) {
-        // Note: Images are in /public/projects/ and will remain for now
-        // Can be cleaned up later if needed via cleanup script
-      }
 
       // Reload page after 1.5 seconds to sync with database
       setTimeout(() => {
@@ -680,7 +772,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     const hasQuiltPatch = !!quiltPatchId;
                     
                     // Show loading spinner while uploading
-                    if (isBlob && uploadingImage) {
+                    if (isBlob && uploadQueue > 0) {
                       return (
                         <div key={index} className="h-16 w-16 flex items-center justify-center rounded-md border border-gray-300 bg-gray-100">
                           <svg className="h-5 w-5 animate-spin text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -708,49 +800,57 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                 </div>
               )}
 
-              {/* Upload button */}
+              {/* Drag & Drop Zone */}
               {(!formData.images || formData.images.length < 5) && (
-                <div className="flex items-center gap-2">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('projectImages')?.click()}
+                  className={`relative border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+                  } ${uploadQueue > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
                   <input
                     type="file"
                     id="projectImages"
                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
+                    onChange={handleFileInputChange}
+                    disabled={uploadQueue > 0}
+                    multiple
                     className="hidden"
                   />
-                  <label htmlFor="projectImages">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={uploadingImage}
-                      className="cursor-pointer"
-                      onClick={() => document.getElementById('projectImages')?.click()}
-                    >
-                      {uploadingImage ? (
-                        <>
-                          <svg className="h-4 w-4 animate-spin mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Uploading...
-                        </>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-gray-200 p-2 flex-shrink-0">
+                      {uploadQueue > 0 ? (
+                        <svg className="h-5 w-5 animate-spin text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                       ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Image
-                        </>
+                        <Upload className="h-5 w-5 text-gray-600" />
                       )}
-                    </Button>
-                  </label>
-                  <span className="text-xs text-gray-500">
-                    {formData.images?.length || 0}/5 images
-                  </span>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">
+                        {uploadQueue > 0 
+                          ? `Uploading ${uploadQueue} image(s)...`
+                          : isDragging 
+                            ? 'Drop images here' 
+                            : 'Drag & drop or click to select images'
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {formData.images?.length || 0}/5 images • JPG, PNG, GIF, WebP • Max 3MB each
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
-              <p className="mt-1 text-xs text-gray-500">
-                Supported: JPG, PNG, GIF, WebP (max 3MB each)
-              </p>
             </div>
 
             <div>

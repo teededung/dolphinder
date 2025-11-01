@@ -34,7 +34,40 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // Clear Walrus-related fields and wallet address in Supabase
+    // Clean Walrus metadata from projects
+    // Remove walrusQuiltId from projects and quiltPatchId/blobId from images
+    const cleanedProjects = (developer.projects || []).map((project: any) => {
+      // Remove walrusQuiltId from project
+      const { walrusQuiltId, ...projectWithoutWalrus } = project;
+      
+      // Clean Walrus metadata from images
+      if (project.images && Array.isArray(project.images)) {
+        projectWithoutWalrus.images = project.images.map((img: any) => {
+          // If it's a string, keep as is (old format)
+          if (typeof img === 'string') {
+            return img;
+          }
+          
+          // If it's an object, remove Walrus fields
+          if (typeof img === 'object' && img !== null) {
+            const { quiltPatchId, blobId, ...imgWithoutWalrus } = img;
+            
+            // If only Walrus fields exist and no filename/localPath, skip this image
+            if (!imgWithoutWalrus.filename && !imgWithoutWalrus.localPath) {
+              return null;
+            }
+            
+            return imgWithoutWalrus;
+          }
+          
+          return img;
+        }).filter(Boolean); // Remove null images
+      }
+      
+      return projectWithoutWalrus;
+    });
+
+    // Clear Walrus-related fields, wallet address, and update projects in Supabase
     // This removes the on-chain references and unbinds the wallet
     // The blob data remains on Walrus storage (immutable) but is no longer linked to this profile
     const { error: updateError } = await supabase
@@ -43,6 +76,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         walrus_blob_id: null,
         blob_object_id: null,
         slush_wallet: null,
+        projects: cleanedProjects,
       })
       .eq('user_id', user.id);
 
@@ -55,6 +89,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log('[delete-walrus] Successfully cleared Walrus references for user:', user.id);
+    console.log('[delete-walrus] Cleaned projects count:', cleanedProjects.length);
 
     return new Response(
       JSON.stringify({ 

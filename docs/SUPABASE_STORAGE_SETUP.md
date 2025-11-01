@@ -50,17 +50,34 @@ PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 ## Cách hoạt động
 
-### Trên Serverless (Netlify/Vercel)
+### Upload Images
+
+#### Trên Serverless (Netlify/Vercel)
 
 - Ảnh được upload lên Supabase Storage bucket `projects`
 - Path format: `{userId}/{sanitizedProjectId}-{timestamp}.{ext}`
 - Trả về public URL từ Supabase Storage
 
-### Trên Local Development
+#### Trên Local Development
 
 - Ảnh được lưu vào `public/projects/`
 - Path format: `/projects/{sanitizedProjectId}-{timestamp}.{ext}`
 - Hoạt động như trước đây
+
+### Delete Images
+
+Khi xóa project, hệ thống tự động:
+
+1. **Gọi API `/api/projects/delete-images`** để xóa tất cả images của project
+2. **Xử lý cả 2 loại images:**
+   - **Supabase Storage images**: Xóa từ bucket `projects` dựa trên `filename`
+   - **Walrus images**: Bỏ qua (không xóa từ Walrus blockchain)
+3. **Cập nhật database**: Xóa project khỏi field `projects`
+
+**Lưu ý:**
+- Images trên Walrus **không bị xóa** vì Walrus là immutable blockchain storage
+- Chỉ xóa images có `filename` (Supabase Storage) hoặc local paths
+- Nếu xóa images thất bại, project vẫn được xóa (graceful degradation)
 
 ## Migration
 

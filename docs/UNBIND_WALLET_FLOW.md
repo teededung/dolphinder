@@ -53,10 +53,16 @@ POST endpoint that:
 
 - Authenticates user
 - Verifies user has walrus_blob_id
+- **Cleans Walrus metadata from projects:**
+  - Removes `walrusQuiltId` from each project
+  - Removes `quiltPatchId` and `blobId` from project images
+  - Keeps images with `filename` or `localPath` (Supabase storage)
+  - Filters out images that only have Walrus storage
 - Clears `slush_wallet`, `walrus_blob_id` and `blob_object_id` from Supabase
+- Updates `projects` field with cleaned data
 - Returns success/error response
 
-**Important:** This endpoint only clears database references. The blob data remains on Walrus storage permanently.
+**Important:** This endpoint clears database references and Walrus metadata from projects. The blob data remains on Walrus storage permanently, but projects will show as "Offchain Only" and images will load from Supabase storage.
 
 ### 3. Updated ProfileForm
 
@@ -87,10 +93,15 @@ onClick={() => {
    - Shows blob ID and explanation
    - Notes that blob data remains on Walrus but won't be linked anymore
 3. User clicks "Clear & Unbind"
-4. Database references cleared
+4. Database references cleared:
+   - `walrus_blob_id` and `blob_object_id` set to null
+   - `slush_wallet` set to null
+   - **Projects cleaned:** Walrus metadata removed from all projects
+   - **Images updated:** Projects now load images from Supabase storage
 5. Page reloads → Profile shows as "offchain"
+6. **Projects display:** All projects show "Offchain Only" badge instead of "On Walrus"
 
-**Note:** Blob data remains on Walrus storage permanently (immutable blockchain) but is no longer linked to the user's profile in our system.
+**Note:** Blob data remains on Walrus storage permanently (immutable blockchain) but is no longer linked to the user's profile in our system. Projects are cleaned to remove all Walrus references.
 
 ### Scenario 2: User without On-chain Profile
 
@@ -112,9 +123,11 @@ onClick={() => {
 
 **Our approach:**
 
-- Clear database references only (`walrus_blob_id` and `blob_object_id`)
+- Clear database references only (`walrus_blob_id`, `blob_object_id`, and `slush_wallet`)
+- Clean Walrus metadata from projects (`walrusQuiltId`, `quiltPatchId`, `blobId`)
 - Blob data remains on Walrus storage (immutable blockchain storage)
 - Profile shows as "offchain" after unbinding
+- Projects show "Offchain Only" badge and load images from Supabase
 - User can re-push to Walrus anytime if needed
 
 ### Future Improvements
@@ -138,10 +151,13 @@ onClick={() => {
 
 1. **Test with on-chain profile:**
    - Create profile and push to Walrus
+   - Add projects with images stored on Walrus (should show "On Walrus" badge)
    - Verify `walrus_blob_id` and `blob_object_id` exist in database
    - Click "Unbind" → Modal should appear
-   - Confirm → Should clear references
+   - Confirm → Should clear references and clean projects
    - Verify profile shows as "offchain"
+   - **Verify projects show "Offchain Only" badge**
+   - **Verify images load from Supabase storage**
 
 2. **Test without on-chain profile:**
    - Create profile without pushing to Walrus

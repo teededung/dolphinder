@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '../../../lib/supabase/serverClient';
+import { createSupabaseServerClient, createSupabaseAdminClient } from '../../../lib/supabase/serverClient';
 import { getDeveloperProfile } from '../../../lib/auth';
 
 export const prerender = false;
@@ -76,24 +76,30 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
     // If existing profile found, claim it by updating user_id
     if (existingProfile) {
       console.log('[complete-registration] Claiming existing profile:', existingProfile.username);
+      console.log('[complete-registration] Profile ID:', existingProfile.id);
+      console.log('[complete-registration] Current is_verified:', existingProfile.is_verified);
       
-      const { error: updateError } = await supabase
+      // Use admin client to bypass RLS (profile has user_id = NULL, so normal client can't update)
+      const adminClient = createSupabaseAdminClient();
+      const { error: updateError } = await adminClient
         .from('developers')
         .update({
           user_id: user.id,
           // Only fill missing fields from GitHub OAuth
           avatar: existingProfile.avatar || githubAvatarUrl,
           github: existingProfile.github || githubProfile,
-          // Keep all existing data (name, bio, linkedin, telegram, slush_wallet, entry)
+          // Keep all existing data (name, bio, linkedin, telegram, slush_wallet, entry, is_verified)
         })
         .eq('id', existingProfile.id);
 
       if (updateError) {
         console.error('[complete-registration] Failed to claim profile:', updateError);
+        console.error('[complete-registration] Error code:', updateError.code);
+        console.error('[complete-registration] Error details:', updateError.details);
         throw updateError;
       }
 
-      console.log('[complete-registration] Profile claimed successfully (is_verified remains true)');
+      console.log('[complete-registration] ✅ Profile claimed successfully! (is_verified =', existingProfile.is_verified, ')');
       return redirect('/dashboard?welcome=true');
     }
 

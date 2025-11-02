@@ -6,7 +6,10 @@ import WalrusBadge from "../components/shared/WalrusBadge";
 import WalrusStorageInfoWrapper from "../components/dashboard/WalrusStorageInfoWrapper";
 import EditableAvatar from "../components/dashboard/EditableAvatar";
 import ProjectsManagerWrapper from "../components/dashboard/ProjectsManagerWrapper";
-import { createSupabaseServerClient } from "../lib/supabase/serverClient";
+import {
+  createSupabaseServerClient,
+  createSupabaseAdminClient,
+} from "../lib/supabase/serverClient";
 import { getCurrentUser, getDeveloperProfile } from "../lib/auth";
 import { shortenAddress } from "../lib/utils";
 import { getDevIdByUsername } from "../lib/sui-views";
@@ -25,12 +28,135 @@ if (!user) {
   return Astro.redirect("/login");
 }
 
+// Get full user object with metadata from Supabase
+const {
+  data: { user: fullUser },
+  error: userError,
+} = await supabase.auth.getUser();
+
+if (userError || !fullUser) {
+  console.error("[Dashboard] Failed to get full user:", userError);
+  return Astro.redirect("/login");
+}
+
 // Get developer profile
-const developer = await getDeveloperProfile(supabase, user.id);
+let developer: Awaited<ReturnType<typeof getDeveloperProfile>> =
+  await getDeveloperProfile(supabase, user.id);
 
 if (!developer) {
-  // User logged in but no profile yet - redirect to register
-  return Astro.redirect("/register");
+  // User logged in but no profile linked yet
+  // Try to find and claim an existing profile with user_id = NULL
+  console.log(
+    "[Dashboard] No profile linked, checking for claimable profile..."
+  );
+
+  const metadata = fullUser.user_metadata;
+  const githubProfile = metadata?.user_name
+    ? `https://github.com/${metadata.user_name}`
+    : null;
+  const username =
+    metadata?.user_name ||
+    metadata?.preferred_username ||
+    fullUser.email?.split("@")[0];
+
+  let claimableProfile = null;
+
+  // Try to find by GitHub URL first (most reliable)
+  if (githubProfile) {
+    const { data } = await supabase
+      .from("developers")
+      .select("*")
+      .eq("github", githubProfile)
+      .is("user_id", null)
+      .single();
+
+    if (data) {
+      console.log(
+        "[Dashboard] Found claimable profile by GitHub:",
+        data.username
+      );
+      claimableProfile = data;
+    }
+  }
+
+  // Try to find by username if GitHub didn't match
+  if (!claimableProfile && username) {
+    const { data } = await supabase
+      .from("developers")
+      .select("*")
+      .eq("username", username)
+      .is("user_id", null)
+      .single();
+
+    if (data) {
+      console.log(
+        "[Dashboard] Found claimable profile by username:",
+        data.username
+      );
+      claimableProfile = data;
+    }
+  }
+
+  // If found, claim it
+  if (claimableProfile) {
+    console.log("[Dashboard] Claiming profile:", claimableProfile.username);
+
+    // Use admin client to bypass RLS (profile has user_id = NULL, so normal client can't update)
+    const adminClient = createSupabaseAdminClient();
+    const { error: updateError } = await adminClient
+      .from("developers")
+      .update({ user_id: user.id })
+      .eq("id", claimableProfile.id);
+
+    if (updateError) {
+      console.error("[Dashboard] Failed to claim profile:", updateError);
+      return Astro.redirect("/register");
+    }
+
+    console.log("[Dashboard] Profile claimed successfully!");
+
+    // Reload the profile with a direct query (bypass potential RLS caching issues)
+    const { data: claimedProfile, error: loadError } = await supabase
+      .from("developers")
+      .select("*")
+      .eq("id", claimableProfile.id)
+      .single();
+
+    if (loadError || !claimedProfile) {
+      console.error("[Dashboard] Failed to load claimed profile:", loadError);
+      console.error("[Dashboard] Retrying with user_id query...");
+
+      // Fallback: try with user_id
+      const { data: retryProfile } = await supabase
+        .from("developers")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (retryProfile) {
+        console.log("[Dashboard] ✅ Profile loaded on retry!");
+        developer = retryProfile;
+      } else {
+        console.error("[Dashboard] ❌ Still failed to load profile");
+        return Astro.redirect("/register");
+      }
+    } else {
+      console.log("[Dashboard] ✅ Profile loaded successfully!");
+      developer = claimedProfile;
+    }
+  } else {
+    // No claimable profile found - redirect to register to create new one
+    console.log(
+      "[Dashboard] No claimable profile found, redirecting to register"
+    );
+    return Astro.redirect("/register");
+  }
+}
+
+// TypeScript assertion: developer is guaranteed to be non-null at this point
+// because we've either loaded it or claimed it above, or redirected if failed
+if (!developer) {
+  throw new Error("Developer profile should be loaded at this point");
 }
 
 const isWelcome = Astro.url.searchParams.get("welcome") === "true";

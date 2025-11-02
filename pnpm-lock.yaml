@@ -117,6 +117,9 @@ importers:
       '@types/three':
         specifier: ^0.180.0
         version: 0.180.0
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -2454,6 +2457,10 @@ packages:
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
+
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
   dset@3.1.4:
@@ -7258,6 +7265,8 @@ snapshots:
       type-fest: 4.41.0
 
   dotenv@16.6.1: {}
+
+  dotenv@17.2.3: {}
 
   dset@3.1.4: {}
 

@@ -109,13 +109,6 @@ function ProjectsManagerLoader({
           // Merge: onchain projects + unique database projects
           const mergedProjects = [...onchainProjects, ...uniqueDatabaseProjects];
           
-          console.log('[ProjectsManagerWrapper] Merged projects:', {
-            onchain: onchainProjects.length,
-            database: databaseProjects.length,
-            unique: uniqueDatabaseProjects.length,
-            total: mergedProjects.length
-          });
-          
           setProjects(mergedProjects);
         } else {
           // No onchain projects, use all database projects

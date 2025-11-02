@@ -236,17 +236,13 @@ function normalizeProjects(rawProjects: any[]): Project[] {
 
 export default function ProjectsManager({ initialProjects = [], onProjectsChange }: ProjectsManagerProps) {
   const [projects, setProjects] = useState<Project[]>(() => {
-    console.log("[ProjectsManager] Initial projects:", initialProjects);
     const normalized = normalizeProjects(initialProjects);
-    console.log("[ProjectsManager] Normalized projects:", normalized);
     return normalized;
   });
   
   // Update projects when initialProjects changes (e.g., after page reload)
   useEffect(() => {
-    console.log("[ProjectsManager] useEffect - initialProjects changed:", initialProjects);
     const normalized = normalizeProjects(initialProjects);
-    console.log("[ProjectsManager] useEffect - normalized:", normalized);
     setProjects(normalized);
   }, [JSON.stringify(initialProjects)]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -574,7 +570,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     try {
       // Step 1: Delete associated images from Supabase Storage (if any)
       if (projectToDelete.images && projectToDelete.images.length > 0) {
-        console.log('[ProjectsManager] Deleting project images:', projectToDelete.images.length);
         
         try {
           const deleteImagesResponse = await fetch('/api/projects/delete-images', {
@@ -585,9 +580,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
 
           const deleteImagesResult = await deleteImagesResponse.json();
 
-          if (deleteImagesResponse.ok) {
-            console.log('[ProjectsManager] Images deleted:', deleteImagesResult);
-          } else {
+          if (!deleteImagesResponse.ok) {
             console.warn('[ProjectsManager] Failed to delete some images:', deleteImagesResult);
             // Continue with project deletion even if image deletion fails
           }

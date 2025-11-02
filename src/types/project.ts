@@ -21,5 +21,6 @@ export interface Project {
   status: 'active' | 'completed' | 'in-progress';
   featured: boolean;
   createdAt: string;
+  pending_deletion?: boolean;    // Soft delete flag - will be removed on next Walrus sync
 }
 

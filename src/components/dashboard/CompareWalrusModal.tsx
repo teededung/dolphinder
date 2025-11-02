@@ -118,10 +118,13 @@ export default function CompareWalrusModal({
         avatarBase64 = developer.avatar || "";
       }
 
+      // Step 1.5: Filter out projects marked for deletion
+      const activeProjects = (developer.projects || []).filter((p: any) => !p.pending_deletion);
+      
       // Step 1.5: Upload project images to Quilts
       setSyncStep("🖼️ Uploading project images to Walrus Quilts...");
       const projectsWithQuilt = await Promise.all(
-        (developer.projects || []).map(async (project: any) => {
+        activeProjects.map(async (project: any) => {
           if (!project.images || project.images.length === 0) {
             return project;
           }
@@ -291,6 +294,9 @@ export default function CompareWalrusModal({
       // Step 5: Update database
       setSyncStep("💾 Saving to database...");
 
+      // Remove projects with pending_deletion flag from database
+      const finalProjects = (developer.projects || []).filter((p: any) => !p.pending_deletion);
+
       const response = await fetch("/api/profile/push-walrus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -305,7 +311,7 @@ export default function CompareWalrusModal({
             telegram: developer.telegram || "",
             website: developer.website || "",
             avatar: developer.avatar || "",
-            projects: developer.projects || [],
+            projects: finalProjects, // Only save active projects
             certificates: developer.certificates || [],
           },
           txDigest: exec.digest,

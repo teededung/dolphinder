@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import type { Project, ProjectImage } from '../../types/project';
-import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle, Cloud, HardDrive } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Check, ExternalLink, Star, Upload, Image as ImageIcon, AlertTriangle, Cloud, HardDrive, RotateCcw } from 'lucide-react';
 import { getQuiltPatchUrl } from '../../lib/walrus-quilt';
 import { getWalrusImageUrl } from '../../lib/walrus';
 import { ProjectImagePlaceholder } from '../shared/ProjectImagePlaceholder';
@@ -550,7 +550,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     setDeleteDialogOpen(true);
   };
 
-  // Delete project (called after confirmation)
+  // Delete project (called after confirmation) - Soft delete
   const handleDelete = async () => {
     if (!projectToDelete) return;
 
@@ -560,37 +560,20 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
 
     // Save original projects for potential revert
     const originalProjects = [...projects];
-    const updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
+    
+    // Mark project for deletion instead of removing it
+    const updatedProjects = projects.map(p => 
+      p.id === projectToDelete.id 
+        ? { ...p, pending_deletion: true }
+        : p
+    );
     
     // Update local state immediately for better UX
     setProjects(updatedProjects);
     onProjectsChange?.(updatedProjects);
     
-    // Delete project and associated images
     try {
-      // Step 1: Delete associated images from Supabase Storage (if any)
-      if (projectToDelete.images && projectToDelete.images.length > 0) {
-        
-        try {
-          const deleteImagesResponse = await fetch('/api/projects/delete-images', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ images: projectToDelete.images }),
-          });
-
-          const deleteImagesResult = await deleteImagesResponse.json();
-
-          if (!deleteImagesResponse.ok) {
-            console.warn('[ProjectsManager] Failed to delete some images:', deleteImagesResult);
-            // Continue with project deletion even if image deletion fails
-          }
-        } catch (imgErr: any) {
-          console.error('[ProjectsManager] Error deleting images:', imgErr);
-          // Continue with project deletion even if image deletion fails
-        }
-      }
-
-      // Step 2: Update projects in database
+      // Update projects in database with pending_deletion flag
       const response = await fetch('/api/profile/update-projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -600,23 +583,66 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete project from database');
+        throw new Error(result.error || 'Failed to mark project for deletion');
       }
 
-      setSuccess('Project deleted successfully!');
-
-      // Reload page after 1.5 seconds to sync with database
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      setSuccess('Project marked for deletion. It will be removed when you sync to Walrus.');
+      setTimeout(() => setSuccess(''), 5000);
       
       setProjectToDelete(null);
+      setLoading(false);
     } catch (err: any) {
-      console.error('Error deleting project:', err);
+      console.error('Error marking project for deletion:', err);
       // Revert state on error
       setProjects(originalProjects);
       onProjectsChange?.(originalProjects);
-      setError(err.message || 'Failed to delete project from database');
+      setError(err.message || 'Failed to mark project for deletion');
+      setLoading(false);
+    }
+  };
+
+  // Restore project (undo soft delete)
+  const handleRestore = async (project: Project) => {
+    setLoading(true);
+    setError('');
+
+    // Save original projects for potential revert
+    const originalProjects = [...projects];
+    
+    // Remove pending_deletion flag
+    const updatedProjects = projects.map(p => 
+      p.id === project.id 
+        ? { ...p, pending_deletion: undefined }
+        : p
+    );
+    
+    // Update local state immediately
+    setProjects(updatedProjects);
+    onProjectsChange?.(updatedProjects);
+    
+    try {
+      // Update projects in database
+      const response = await fetch('/api/profile/update-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updatedProjects }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to restore project');
+      }
+
+      setSuccess('Project restored successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Error restoring project:', err);
+      // Revert state on error
+      setProjects(originalProjects);
+      onProjectsChange?.(originalProjects);
+      setError(err.message || 'Failed to restore project');
       setLoading(false);
     }
   };
@@ -947,17 +973,27 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                       }`}>
                         {project.status}
                       </span>
-                      {/* Walrus Storage Badge */}
-                      {isProjectOnWalrus(project) ? (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <img src="/walrus.svg" alt="Walrus" className="h-3 w-3" />
-                          On Walrus
+                      {/* Pending Deletion Badge */}
+                      {project.pending_deletion ? (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 border border-red-300">
+                          <AlertTriangle className="h-3 w-3" />
+                          Will be removed on sync
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
-                          <HardDrive className="h-3 w-3" />
-                          Offchain Only
-                        </span>
+                        <>
+                          {/* Walrus Storage Badge */}
+                          {isProjectOnWalrus(project) ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <img src="/walrus.svg" alt="Walrus" className="h-3 w-3" />
+                              On Walrus
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+                              <HardDrive className="h-3 w-3" />
+                              Offchain Only
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mb-3">{project.description}</p>
@@ -1025,24 +1061,39 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => startEdit(project)}
-                      disabled={loading || showForm}
-                      className="gap-1"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDeleteDialog(project)}
-                      disabled={loading || showForm}
-                      className="gap-1 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!project.pending_deletion && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEdit(project)}
+                        disabled={loading || showForm}
+                        className="gap-1"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {project.pending_deletion ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRestore(project)}
+                        disabled={loading}
+                        className="gap-1 text-green-600 hover:text-green-700"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Restore
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openDeleteDialog(project)}
+                        disabled={loading || showForm}
+                        className="gap-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

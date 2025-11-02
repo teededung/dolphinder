@@ -28,6 +28,8 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
   const currentAccount = useCurrentAccount();
   const { open, close } = useModalStore();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction() as any;
+  const wallets = useWallets();
+  const { mutate: connectWallet } = useConnectWallet();
   const pendingWalrusPushRef = useRef<FormData | null>(null);
   const isConnectingWalletRef = useRef(false);
 
@@ -465,6 +467,62 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         />
       </div>
 
+      {/* Wallet Connection Status - Only show if not connected */}
+      {!currentAccount && bindedWallet && (
+        <div className="flex items-center justify-between rounded-lg border border-red-400/30 bg-red-500/5 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-red-500"></div>
+              <span className="text-sm text-red-400">Wallet Not Connected</span>
+            </div>
+            <span className="text-xs text-white/60">
+              Please connect your wallet to enable Walrus sync
+            </span>
+          </div>
+          <Button
+            type="button"
+            onClick={() => {
+              isConnectingWalletRef.current = true;
+              open({
+                content: (
+                  <div className="w-full">
+                    <h1 className="text-2xl font-bold mb-4">Connect your wallet</h1>
+                    <div className="flex flex-col gap-2">
+                      {wallets.map(wallet => (
+                        <Button
+                          key={wallet.name}
+                          onClick={() => {
+                            connectWallet(
+                              { wallet },
+                              {
+                                onSuccess: () => {
+                                  close();
+                                },
+                              }
+                            );
+                          }}
+                          className="flex items-center gap-2 px-2"
+                        >
+                          <img
+                            src={wallet.icon}
+                            alt={wallet.name}
+                            className="size-12 rounded-full"
+                          />
+                          {wallet.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ),
+              });
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-xs whitespace-nowrap"
+          >
+            Connect Wallet
+          </Button>
+        </div>
+      )}
+
       {/* Walrus Push Section - Only show if user doesn't have onchain profile yet */}
       {!developer.walrus_blob_id && !developer.blob_object_id && (
         <div className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-4">
@@ -475,14 +533,14 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
                 id="enableWalrusPush"
                 checked={enableWalrusPush}
                 onChange={(e) => setEnableWalrusPush(e.target.checked)}
-                disabled={!bindedWallet || loading || walrusLoading}
+                disabled={!bindedWallet || !currentAccount || loading || walrusLoading}
                 className="mt-1"
               />
               <label htmlFor="enableWalrusPush" className="flex-1 text-sm">
                 <span className="font-semibold">Push to Walrus (Onchain Storage)</span>
                 <p className="mt-1 text-xs text-white/70">
                   Store your profile on Sui blockchain for verifiability and censorship-resistance.
-                  Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"}
+                  Costs ~0.01 SUI for transaction fees. {!bindedWallet && "(Bind wallet first)"} {bindedWallet && !currentAccount && "(Connect wallet first)"}
                 </p>
               </label>
             </div>

@@ -408,10 +408,6 @@ export default function CompareWalrusModal({
   // Check if there are any differences between offchain and onchain data
   const hasAnyDifference = onchainData
     ? (() => {
-        console.log("=== COMPARISON DEBUG ===");
-        console.log("Offchain Data:", JSON.stringify(offchainData, null, 2));
-        console.log("Onchain Data:", JSON.stringify(onchainData, null, 2));
-        
         // Check profile fields (excluding avatar - it can be in different formats)
         const fieldDifferences = fields
           .filter((field) => field.key !== "avatar") // Skip avatar comparison
@@ -420,20 +416,21 @@ export default function CompareWalrusModal({
               offchainData.profile[field.key as keyof typeof offchainData.profile];
             const onchainValue =
               onchainData.profile[field.key as keyof typeof onchainData.profile];
-            const isDiff = offchainValue !== onchainValue;
-            if (isDiff) {
-              console.log(`Field "${field.key}" differs:`, {
-                offchain: offchainValue,
-                onchain: onchainValue,
-              });
-            }
-            return isDiff;
+            return offchainValue !== onchainValue;
           });
         
         const hasFieldDiff = fieldDifferences.some(Boolean);
         
+        // Check if any project has pending_deletion flag
+        const hasPendingDeletion = offchainData.projects.some((p: any) => p.pending_deletion === true);
+        
         // Compare projects: check count only, ignore image format/path differences
         const hasProjectsDiff = (() => {
+          // If there are projects pending deletion, there's a difference
+          if (hasPendingDeletion) {
+            return true;
+          }
+          
           if (offchainData.projects.length !== onchainData.projects.length) {
             return true;
           }
@@ -459,12 +456,6 @@ export default function CompareWalrusModal({
         })();
         
         const hasCertsDiff = JSON.stringify(offchainData.certificates) !== JSON.stringify(onchainData.certificates);
-        
-        console.log("Field differences (excluding avatar):", hasFieldDiff);
-        console.log("Projects different:", hasProjectsDiff);
-        console.log("Certificates different:", hasCertsDiff);
-        console.log("Has any difference:", hasFieldDiff || hasProjectsDiff || hasCertsDiff);
-        console.log("======================");
         
         return hasFieldDiff || hasProjectsDiff || hasCertsDiff;
       })()

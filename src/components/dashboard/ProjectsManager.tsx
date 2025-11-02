@@ -209,6 +209,7 @@ function normalizeProjects(rawProjects: any[]): Project[] {
         status: p.status as Project['status'],
         featured: p.featured || false,
         createdAt: p.createdAt || new Date().toISOString(),
+        pending_deletion: p.pending_deletion || undefined,
       };
     }
     
@@ -225,6 +226,7 @@ function normalizeProjects(rawProjects: any[]): Project[] {
       status: (p.status || 'active') as Project['status'],
       featured: p.featured || false,
       createdAt: p.createdAt || new Date().toISOString(),
+      pending_deletion: p.pending_deletion || undefined,
     };
   });
   
@@ -550,7 +552,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     setDeleteDialogOpen(true);
   };
 
-  // Delete project (called after confirmation) - Soft delete
+  // Delete project (called after confirmation)
   const handleDelete = async () => {
     if (!projectToDelete) return;
 
@@ -561,19 +563,29 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     // Save original projects for potential revert
     const originalProjects = [...projects];
     
-    // Mark project for deletion instead of removing it
-    const updatedProjects = projects.map(p => 
-      p.id === projectToDelete.id 
-        ? { ...p, pending_deletion: true }
-        : p
-    );
+    // Check if project is on Walrus
+    const isOnWalrus = isProjectOnWalrus(projectToDelete);
+    
+    let updatedProjects: Project[];
+    
+    if (isOnWalrus) {
+      // Soft delete: Mark project for deletion (will be removed on next Walrus sync)
+      updatedProjects = projects.map(p => 
+        p.id === projectToDelete.id 
+          ? { ...p, pending_deletion: true }
+          : p
+      );
+    } else {
+      // Hard delete: Remove project immediately (not on Walrus)
+      updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
+    }
     
     // Update local state immediately for better UX
     setProjects(updatedProjects);
     onProjectsChange?.(updatedProjects);
     
     try {
-      // Update projects in database with pending_deletion flag
+      // Update projects in database
       const response = await fetch('/api/profile/update-projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -583,20 +595,25 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to mark project for deletion');
+        throw new Error(result.error || isOnWalrus ? 'Failed to mark project for deletion' : 'Failed to delete project');
       }
 
-      setSuccess('Project marked for deletion. It will be removed when you sync to Walrus.');
-      setTimeout(() => setSuccess(''), 5000);
+      if (isOnWalrus) {
+        setSuccess('Project marked for deletion. It will be removed when you sync to Walrus.');
+        setTimeout(() => setSuccess(''), 5000);
+      } else {
+        setSuccess('Project deleted successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      }
       
       setProjectToDelete(null);
       setLoading(false);
     } catch (err: any) {
-      console.error('Error marking project for deletion:', err);
+      console.error('Error deleting project:', err);
       // Revert state on error
       setProjects(originalProjects);
       onProjectsChange?.(originalProjects);
-      setError(err.message || 'Failed to mark project for deletion');
+      setError(err.message || 'Failed to delete project');
       setLoading(false);
     }
   };
@@ -1130,19 +1147,60 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
               Delete Project
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+              {projectToDelete && isProjectOnWalrus(projectToDelete) ? (
+                <>
+                  This project is stored on Walrus. It will be marked for deletion and removed when you sync to Walrus.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           {projectToDelete && (
-            <div className="my-4 rounded-lg border border-red-200 bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-900 mb-1">{projectToDelete.name}</p>
+            <div className={`my-4 rounded-lg border p-4 ${
+              isProjectOnWalrus(projectToDelete)
+                ? 'border-yellow-200 bg-yellow-50'
+                : 'border-red-200 bg-red-50'
+            }`}>
+              <p className={`text-sm font-medium mb-1 ${
+                isProjectOnWalrus(projectToDelete)
+                  ? 'text-yellow-900'
+                  : 'text-red-900'
+              }`}>
+                {projectToDelete.name}
+              </p>
               {projectToDelete.description && (
-                <p className="text-xs text-red-700 line-clamp-2">{projectToDelete.description}</p>
-              )}
-              {projectToDelete.images && projectToDelete.images.length > 0 && (
-                <p className="text-xs text-red-600 mt-2">
-                  This will also remove {projectToDelete.images.length} associated image{projectToDelete.images.length > 1 ? 's' : ''}.
+                <p className={`text-xs line-clamp-2 ${
+                  isProjectOnWalrus(projectToDelete)
+                    ? 'text-yellow-700'
+                    : 'text-red-700'
+                }`}>
+                  {projectToDelete.description}
                 </p>
+              )}
+              {isProjectOnWalrus(projectToDelete) ? (
+                <div className="mt-2 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-yellow-700">
+                    This project will be marked for deletion. You can restore it before syncing to Walrus.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {projectToDelete.images && projectToDelete.images.length > 0 && (
+                    <p className="text-xs text-red-600 mt-2">
+                      This will also remove {projectToDelete.images.length} associated image{projectToDelete.images.length > 1 ? 's' : ''}.
+                    </p>
+                  )}
+                  <div className="mt-2 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">
+                      This project will be permanently deleted from the database immediately.
+                    </p>
+                  </div>
+                </>
               )}
             </div>
           )}

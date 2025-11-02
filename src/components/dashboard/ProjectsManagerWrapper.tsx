@@ -95,10 +95,26 @@ function ProjectsManagerLoader({
         
         // Merge onchain and database projects
         // Priority: onchain version wins if same project ID exists
-        // Otherwise, keep all unique projects from both sources
+        // BUT preserve pending_deletion flag from database
         if (json?.projects && Array.isArray(json.projects) && json.projects.length > 0) {
           const onchainProjects = json.projects;
           const databaseProjects = initialProjects || [];
+          
+          // Create a map of database projects for quick lookup
+          const dbProjectsMap = new Map(databaseProjects.map((p: any) => [p.id, p]));
+          
+          // Merge onchain projects with database flags (like pending_deletion)
+          const mergedOnchainProjects = onchainProjects.map((onchainProject: any) => {
+            const dbProject = dbProjectsMap.get(onchainProject.id);
+            if (dbProject?.pending_deletion) {
+              // Preserve pending_deletion flag from database
+              return {
+                ...onchainProject,
+                pending_deletion: true
+              };
+            }
+            return onchainProject;
+          });
           
           // Get all onchain project IDs
           const onchainIds = new Set(onchainProjects.map((p: any) => p.id));
@@ -106,8 +122,8 @@ function ProjectsManagerLoader({
           // Get database projects that are NOT on onchain (i.e., not synced yet)
           const uniqueDatabaseProjects = databaseProjects.filter((p: any) => !onchainIds.has(p.id));
           
-          // Merge: onchain projects + unique database projects
-          const mergedProjects = [...onchainProjects, ...uniqueDatabaseProjects];
+          // Merge: onchain projects (with preserved flags) + unique database projects
+          const mergedProjects = [...mergedOnchainProjects, ...uniqueDatabaseProjects];
           
           setProjects(mergedProjects);
         } else {

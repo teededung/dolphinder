@@ -9,10 +9,10 @@ export const prerender = false;
  */
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const { access_token, refresh_token } = await request.json();
+    const body = await request.json();
+    const { access_token, refresh_token } = body;
 
     if (!access_token) {
-      console.error('[session-sync] Missing access token');
       return new Response(
         JSON.stringify({ error: 'Missing access token' }),
         { 
@@ -22,10 +22,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    console.log('[session-sync] Creating server client...');
     const supabase = createSupabaseServerClient(cookies as any);
 
-    console.log('[session-sync] Setting session...');
     // Set session from tokens - this should set cookies automatically
     const { data, error } = await supabase.auth.setSession({
       access_token,
@@ -42,8 +40,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
       );
     }
-
-    console.log('[session-sync] Session set successfully for user:', data.user?.id);
 
     return new Response(
       JSON.stringify({ 

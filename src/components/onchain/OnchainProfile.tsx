@@ -101,7 +101,27 @@ function OnchainProfile({ username, showEditButton }: { username: string; showEd
         }
       } catch (e: any) {
         console.warn('[OnchainProfile] Failed to load onchain data:', e?.message || e);
-        setError(String(e?.message || e));
+        const errorMessage = String(e?.message || e);
+        const errorStr = errorMessage.toLowerCase();
+        
+        // Check if error is 404 NOT_FOUND from Walrus
+        const isWalrusExpired = errorStr.includes('404') || 
+                                errorStr.includes('not_found') || 
+                                errorStr.includes('blob_not_found') ||
+                                (errorStr.includes('walrus fetch failed') && errorStr.includes('404'));
+        
+        if (isWalrusExpired) {
+          // Silently remove expired walrus_blob_id from database
+          // Banner will be shown in dashboard, so no need to show error here
+          fetch('/api/profile/handle-walrus-expiration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          }).catch((err) => {
+            console.error('[OnchainProfile] Failed to remove expired blob:', err);
+          });
+        }
+        
+        setError(errorMessage);
         setIsVerified(null);
         
         // Hide skeleton and show offchain fallback on error

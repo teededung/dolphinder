@@ -17,13 +17,33 @@ export function createSupabaseServerClient(cookies: AstroCookies): SupabaseClien
   const client = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
-        return cookies.get(name)?.value;
+        const cookie = cookies.get(name);
+        return cookie?.value;
       },
       set(name: string, value: string, options?: any) {
-        cookies.set(name, value, options);
+        try {
+          // Ensure cookies are set with proper options for cross-domain OAuth
+          cookies.set(name, value, {
+            path: '/',
+            sameSite: 'lax',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: options?.maxAge || 60 * 60 * 24 * 7, // 7 days default
+            ...options,
+          });
+        } catch (error) {
+          console.error(`[Supabase] Failed to set cookie ${name}:`, error);
+        }
       },
       remove(name: string, options?: any) {
-        cookies.delete(name, options);
+        try {
+          cookies.delete(name, {
+            path: '/',
+            ...options,
+          });
+        } catch (error) {
+          console.error(`[Supabase] Failed to remove cookie ${name}:`, error);
+        }
       },
     },
   });

@@ -5,6 +5,7 @@ import { fromBase64 } from '@mysten/bcs';
 import { fetchJson } from '../../lib/walrus';
 import ProjectsManager from './ProjectsManager';
 import { GlobalSuiProvider } from '../providers/GlobalSuiProvider';
+import WalrusExpiredBanner from './WalrusExpiredBanner';
 import type { Project } from '../../types/project';
 
 type OnchainData = {
@@ -44,6 +45,7 @@ function ProjectsManagerLoader({
   const [projects, setProjects] = useState<any[]>(initialProjects);
   const [loading, setLoading] = useState(!!walrusBlobId);
   const [error, setError] = useState<string | null>(null);
+  const [walrusExpired, setWalrusExpired] = useState(false);
 
   useEffect(() => {
     // If no walrusBlobId, use database projects
@@ -131,7 +133,31 @@ function ProjectsManagerLoader({
           setProjects(initialProjects);
         }
       } catch (e: any) {
-        setError(String(e?.message || e));
+        const errorMessage = String(e?.message || e);
+        const errorStr = errorMessage.toLowerCase();
+        
+        // Check if error is 404 NOT_FOUND from Walrus
+        const isWalrusExpired = errorStr.includes('404') || 
+                                errorStr.includes('not_found') || 
+                                errorStr.includes('blob_not_found') ||
+                                (errorStr.includes('walrus fetch failed') && errorStr.includes('404'));
+        
+        if (isWalrusExpired && walrusBlobId) {
+          // Walrus blob has expired - remove it from database
+          setWalrusExpired(true);
+          setError(null); // Don't show generic error, show expired banner instead
+          
+          // Call API to remove expired walrus_blob_id
+          fetch('/api/profile/handle-walrus-expiration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          }).catch((err) => {
+            console.error('[ProjectsManagerWrapper] Failed to remove expired blob:', err);
+          });
+        } else {
+          setError(errorMessage);
+        }
+        
         // Fallback to database projects on error
         setProjects(initialProjects);
       } finally {
@@ -154,8 +180,13 @@ function ProjectsManagerLoader({
 
   return (
     <>
-      {/* Error/Warning Banner */}
-      {error && (
+      {/* Walrus Expired Banner */}
+      {walrusExpired && (
+        <WalrusExpiredBanner username={username} />
+      )}
+
+      {/* Error/Warning Banner (for non-expired errors) */}
+      {error && !walrusExpired && (
         <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
           <p className="font-medium">⚠️ Could not load onchain projects</p>
           <p className="text-xs mt-1">Showing database projects instead. Error: {error}</p>

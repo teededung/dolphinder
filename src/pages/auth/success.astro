@@ -67,7 +67,7 @@ export const prerender = false;
           }
 
           // Sync session to server-side cookies
-          await fetch("/api/auth/session-sync", {
+          const syncResponse = await fetch("/api/auth/session-sync", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -77,6 +77,15 @@ export const prerender = false;
               refresh_token: session.refresh_token,
             }),
           });
+
+          const syncResult = await syncResponse.json();
+
+          if (!syncResponse.ok) {
+            throw new Error(syncResult.error || 'Failed to sync session');
+          }
+
+          // Wait a bit for cookies to be fully set
+          await new Promise(resolve => setTimeout(resolve, 500));
 
           // Redirect to server-side handler
           window.location.href = "/api/auth/complete-registration";

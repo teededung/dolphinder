@@ -53,6 +53,7 @@ export default function DevelopersList({ developers }: DevelopersListProps) {
                 size={80}
               />
               {/* Onchain Badge */}
+              {/* Note: Icon will automatically hide if walrusBlobId is null (e.g., after expired blob is removed) */}
               {dev.walrusBlobId && (
                 <div className="absolute right-1/2 -top-1 z-10 translate-x-[32px]">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-400/40 bg-white shadow-lg">

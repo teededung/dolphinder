@@ -174,6 +174,8 @@ if (developer.walrus_blob_id) {
     devId = await getDevIdByUsername(developer.username);
 
     // Query blob metadata using blob_object_id (Sui object ID)
+    // Note: Expired blob detection is handled in ProjectsManagerWrapper when fetching projects
+    // This metadata query is for display purposes only
     if (developer.blob_object_id) {
       try {
         console.log(
@@ -189,13 +191,16 @@ if (developer.walrus_blob_id) {
           console.log("[Dashboard] ✅ Blob metadata retrieved successfully!");
           console.log("[Dashboard] Storage:", blobMetadata.storage);
         } else {
-          console.log("[Dashboard] ⚠️ Blob metadata not found");
+          console.log(
+            "[Dashboard] ⚠️ Blob metadata not found (blob may be expired or deleted)"
+          );
         }
       } catch (metadataError: any) {
         console.error(
           "[Dashboard] Failed to fetch blob metadata:",
           metadataError?.message || metadataError
         );
+        // Note: If blob is expired, ProjectsManagerWrapper will detect it when fetching projects
       }
     } else {
       console.log(

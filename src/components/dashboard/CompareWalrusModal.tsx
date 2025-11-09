@@ -34,6 +34,7 @@ export default function CompareWalrusModal({
   const [loading, setLoading] = useState(false);
   const [onchainData, setOnchainData] = useState<DeveloperWalrus | null>(null);
   const [error, setError] = useState("");
+  const [walrusExpired, setWalrusExpired] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncDirection, setSyncDirection] = useState<"to-walrus" | "to-offchain" | null>(null);
   const [syncStep, setSyncStep] = useState("");
@@ -57,6 +58,7 @@ export default function CompareWalrusModal({
     setLoading(true);
     setError("");
     setOnchainData(null);
+    setWalrusExpired(false);
 
     try {
       const data = await fetchJson<DeveloperWalrus>(walrusBlobId);
@@ -64,9 +66,53 @@ export default function CompareWalrusModal({
       console.log("[Compare Modal] Fetched onchain data:", data);
     } catch (err: any) {
       console.error("[Compare Modal] Fetch error:", err);
-      setError(err.message || "Failed to fetch onchain data");
+      const errorMessage = err.message || "Failed to fetch onchain data";
+      const errorStr = errorMessage.toLowerCase();
+      
+      // Check if error is 404 NOT_FOUND from Walrus
+      const isExpired = errorStr.includes('404') || 
+                       errorStr.includes('not_found') || 
+                       errorStr.includes('blob_not_found') ||
+                       (errorStr.includes('walrus fetch failed') && errorStr.includes('404'));
+      
+      if (isExpired) {
+        setWalrusExpired(true);
+        setError("File Walrus của bạn đã hết hạn trên storage. Dữ liệu này không còn khả dụng.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRemoveExpiredData() {
+    setSyncing(true);
+    setSyncError("");
+    setSyncSuccess("");
+    
+    try {
+      const response = await fetch("/api/profile/handle-walrus-expiration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to remove expired data");
+      }
+
+      setSyncSuccess("✅ Đã xóa dữ liệu Walrus hết hạn thành công!");
+      
+      // Close modal and reload page after 1.5 seconds
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err: any) {
+      console.error("[Remove Expired Data] Error:", err);
+      setSyncError(err.message || "Failed to remove expired data");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -498,12 +544,79 @@ export default function CompareWalrusModal({
         )}
 
         {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-            {error}
+          <div className={`rounded-md p-3 text-sm ${
+            walrusExpired 
+              ? "bg-orange-50 text-orange-800 border border-orange-200" 
+              : "bg-red-50 text-red-800"
+          }`}>
+            <p className="font-medium">{error}</p>
+            {walrusExpired && (
+              <p className="mt-2 text-xs">
+                File lưu trữ trên Walrus của bạn đã hết hạn. Bạn có thể xóa tham chiếu này và upload lại lên Walrus sau.
+              </p>
+            )}
           </div>
         )}
 
-        {!loading && !error && onchainData && (
+        {walrusExpired && !loading && (
+          <div className="space-y-4">
+            <div className="rounded-md bg-orange-50 border border-orange-200 p-4">
+              <h3 className="font-semibold text-orange-900 mb-2">File Walrus đã hết hạn</h3>
+              <p className="text-sm text-orange-800 mb-4">
+                File lưu trữ trên Walrus của bạn đã hết hạn và không còn khả dụng. 
+                Bạn có thể xóa tham chiếu này khỏi profile và upload lại lên Walrus sau.
+              </p>
+            
+            {syncError && (
+              <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 mb-4">
+                {syncError}
+              </div>
+            )}
+
+            {syncSuccess && (
+              <div className="rounded-md bg-green-50 p-3 text-sm text-green-800 mb-4">
+                {syncSuccess}
+              </div>
+            )}
+
+            <Button
+              onClick={handleRemoveExpiredData}
+              disabled={syncing}
+              className="w-full bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {syncing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Đang xóa...
+                </span>
+              ) : (
+                "Xóa Dữ Liệu Hết Hạn"
+              )}
+            </Button>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && !walrusExpired && onchainData && (
           <div className="space-y-4">
             {/* Wallet Connection Status */}
             <div className="flex items-center justify-between rounded-lg border border-emerald-400/30 bg-emerald-500/5 px-4 py-3">
@@ -744,6 +857,7 @@ export default function CompareWalrusModal({
             )}
 
             {/* Action Buttons */}
+            {!walrusExpired && (
             <div className="flex gap-3">
               <Button
                 onClick={handleSyncToWalrus}
@@ -816,6 +930,7 @@ export default function CompareWalrusModal({
                 )}
               </Button>
             </div>
+            )}
           </div>
         )}
       </DialogContent>

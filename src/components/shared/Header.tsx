@@ -38,9 +38,25 @@ const Header = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = getSupabaseBrowserClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       
-      if (user) {
+      if (user && session) {
+        // Sync session to server-side cookies if not already synced
+        try {
+          await fetch('/api/auth/session-sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            }),
+            credentials: 'include', // Important: include cookies in request
+          });
+        } catch (err) {
+          // Continue anyway, user might still be authenticated client-side
+        }
+
         setIsAuthenticated(true);
         setUserEmail(user.email || null);
         setUserId(user.id || null);

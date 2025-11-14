@@ -29,5 +29,6 @@ pnpm-debug.log*
 .netlify
 
 .cursor/
+.kiro/
 
 public/projects/

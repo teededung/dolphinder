@@ -595,11 +595,14 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
           ? { ...p, pending_deletion: true }
           : p
       );
+      
+      // DEBUG: Verify pending_deletion was set
+      const deletedProject = updatedProjects.find(p => p.id === projectToDelete.id);
     } else {
       // Hard delete: Remove project immediately (not on Walrus)
       updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
     }
-    
+        
     // Update local state immediately for better UX
     setProjects(updatedProjects);
     onProjectsChange?.(updatedProjects);
@@ -997,7 +1000,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
                               <HardDrive className="h-3 w-3" />
-                              Offchain Only
+                              Offchain
                             </span>
                           )}
                         </>

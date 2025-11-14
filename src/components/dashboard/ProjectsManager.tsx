@@ -595,9 +595,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
           ? { ...p, pending_deletion: true }
           : p
       );
-      
-      // DEBUG: Verify pending_deletion was set
-      const deletedProject = updatedProjects.find(p => p.id === projectToDelete.id);
     } else {
       // Hard delete: Remove project immediately (not on Walrus)
       updatedProjects = projects.filter(p => p.id !== projectToDelete.id);

@@ -33,6 +33,7 @@ export default function CompareWalrusModal({
 }: CompareWalrusModalProps) {
   const [loading, setLoading] = useState(false);
   const [onchainData, setOnchainData] = useState<DeveloperWalrus | null>(null);
+  const [offchainData, setOffchainData] = useState<DeveloperDB>(developer);
   const [error, setError] = useState("");
   const [walrusExpired, setWalrusExpired] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -47,25 +48,45 @@ export default function CompareWalrusModal({
   const wallets = useWallets();
   const { mutate: connectWallet } = useConnectWallet();
 
-  // Fetch onchain data when modal opens
+  // Fetch both onchain and offchain data when modal opens
   useEffect(() => {
-    if (open && walrusBlobId) {
-      fetchOnchainData();
+    if (open) {
+      fetchData();
     }
   }, [open, walrusBlobId]);
 
-  async function fetchOnchainData() {
+  async function fetchData() {
     setLoading(true);
     setError("");
     setOnchainData(null);
     setWalrusExpired(false);
 
     try {
-      const data = await fetchJson<DeveloperWalrus>(walrusBlobId);
-      setOnchainData(data);
-      console.log("[Compare Modal] Fetched onchain data:", data);
+      // Fetch latest offchain data from database
+      const offchainResponse = await fetch('/api/profile/get-current');
+      if (offchainResponse.ok) {
+        const { developer: latestDeveloper } = await offchainResponse.json();
+        setOffchainData(latestDeveloper);
+      }
+
+      // Fetch onchain data from Walrus if available
+      if (walrusBlobId) {
+        await fetchOnchainData();
+      }
     } catch (err: any) {
       console.error("[Compare Modal] Fetch error:", err);
+      setError(err.message || "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchOnchainData() {
+    try {
+      const data = await fetchJson<DeveloperWalrus>(walrusBlobId);
+      setOnchainData(data);
+    } catch (err: any) {
+      console.error("[Compare Modal] Fetch onchain error:", err);
       const errorMessage = err.message || "Failed to fetch onchain data";
       const errorStr = errorMessage.toLowerCase();
       
@@ -81,8 +102,6 @@ export default function CompareWalrusModal({
       } else {
         setError(errorMessage);
       }
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -141,14 +160,25 @@ export default function CompareWalrusModal({
     let newBlobObjectId: string | undefined;
 
     try {
+      // Step 0: Fetch latest developer data from database (to get pending_deletion flags)
+      setSyncStep("📥 Fetching latest profile data...");
+      const fetchResponse = await fetch('/api/profile/get-current');
+      if (!fetchResponse.ok) {
+        throw new Error('Failed to fetch latest profile data');
+      }
+      const { developer: latestDeveloper } = await fetchResponse.json();
+      
       // Step 1: Prepare data
       setSyncStep("📦 Preparing profile data...");
 
+      // Use latest developer data instead of prop
+      const currentDeveloper = latestDeveloper;
+      
       // Convert avatar to base64 for Walrus blob
       let avatarBase64 = "";
-      if (developer.avatar && developer.avatar.startsWith("/avatar/")) {
+      if (currentDeveloper.avatar && currentDeveloper.avatar.startsWith("/avatar/")) {
         try {
-          const response = await fetch(developer.avatar);
+          const response = await fetch(currentDeveloper.avatar);
           const blob = await response.blob();
           avatarBase64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -158,14 +188,14 @@ export default function CompareWalrusModal({
           });
         } catch (err) {
           console.warn("Failed to fetch existing avatar for Walrus:", err);
-          avatarBase64 = developer.avatar || "";
+          avatarBase64 = currentDeveloper.avatar || "";
         }
       } else {
-        avatarBase64 = developer.avatar || "";
+        avatarBase64 = currentDeveloper.avatar || "";
       }
 
       // Step 1.5: Filter out projects marked for deletion
-      const activeProjects = (developer.projects || []).filter((p: any) => !p.pending_deletion);
+      const activeProjects = (currentDeveloper.projects || []).filter((p: any) => !p.pending_deletion);
       
       // Step 1.5: Upload project images to Quilts
       setSyncStep("🖼️ Uploading project images to Walrus Quilts...");
@@ -285,28 +315,18 @@ export default function CompareWalrusModal({
 
       const profileData: DeveloperWalrus = {
         profile: {
-          name: developer.name,
-          bio: developer.bio || "",
-          entry: developer.entry || "",
-          github: developer.github || "",
-          linkedin: developer.linkedin || "",
-          telegram: developer.telegram || "",
-          website: developer.website || "",
+          name: currentDeveloper.name,
+          bio: currentDeveloper.bio || "",
+          entry: currentDeveloper.entry || "",
+          github: currentDeveloper.github || "",
+          linkedin: currentDeveloper.linkedin || "",
+          telegram: currentDeveloper.telegram || "",
+          website: currentDeveloper.website || "",
           avatar: avatarBase64,
         },
         projects: projectsWithQuilt, // Use updated projects with quilt IDs
-        certificates: developer.certificates || [],
+        certificates: currentDeveloper.certificates || [],
       };
-
-      console.log("[Sync to Walrus] Profile Data:", {
-        ...profileData,
-        profile: {
-          ...profileData.profile,
-          avatar: avatarBase64
-            ? `${avatarBase64.slice(0, 50)}... (length: ${avatarBase64.length})`
-            : "No avatar",
-        },
-      });
 
       // Step 2: Upload to Walrus
       setSyncStep("🐋 Uploading to Walrus storage...");
@@ -318,7 +338,7 @@ export default function CompareWalrusModal({
 
       // Step 3: Create transaction
       setSyncStep("⚙️ Creating blockchain transaction...");
-      const devId = await getDevIdByUsername(developer.username);
+      const devId = await getDevIdByUsername(currentDeveloper.username);
       if (!devId) {
         throw new Error("Developer profile not found on blockchain");
       }
@@ -340,8 +360,11 @@ export default function CompareWalrusModal({
       // Step 5: Update database
       setSyncStep("💾 Saving to database...");
 
-      // Remove projects with pending_deletion flag from database
-      const finalProjects = (developer.projects || []).filter((p: any) => !p.pending_deletion);
+      // Use projectsWithQuilt directly - it already has:
+      // 1. Projects with pending_deletion filtered out (line 147-148)
+      // 2. Updated Walrus quilt IDs from upload
+      // This ensures consistency between Walrus storage and database
+      const finalProjects = projectsWithQuilt;
 
       const response = await fetch("/api/profile/push-walrus", {
         method: "POST",
@@ -349,16 +372,16 @@ export default function CompareWalrusModal({
         body: JSON.stringify({
           walrusData: { blobId, blobObjectId: newBlobObjectId },
           profileFields: {
-            name: developer.name,
-            bio: developer.bio || "",
-            entry: developer.entry || "",
-            github: developer.github || "",
-            linkedin: developer.linkedin || "",
-            telegram: developer.telegram || "",
-            website: developer.website || "",
-            avatar: developer.avatar || "",
+            name: currentDeveloper.name,
+            bio: currentDeveloper.bio || "",
+            entry: currentDeveloper.entry || "",
+            github: currentDeveloper.github || "",
+            linkedin: currentDeveloper.linkedin || "",
+            telegram: currentDeveloper.telegram || "",
+            website: currentDeveloper.website || "",
+            avatar: currentDeveloper.avatar || "",
             projects: finalProjects, // Only save active projects
-            certificates: developer.certificates || [],
+            certificates: currentDeveloper.certificates || [],
           },
           txDigest: exec.digest,
         }),
@@ -424,20 +447,20 @@ export default function CompareWalrusModal({
     }
   }
 
-  // Prepare offchain data in same format as onchain
-  const offchainData: DeveloperWalrus = {
+  // Convert offchain data (DeveloperDB) to same format as onchain (DeveloperWalrus)
+  const offchainDataFormatted: DeveloperWalrus = {
     profile: {
-      name: developer.name,
-      bio: developer.bio || "",
-      entry: developer.entry || "",
-      github: developer.github || "",
-      linkedin: developer.linkedin || "",
-      telegram: developer.telegram || "",
-      website: developer.website || "",
-      avatar: developer.avatar || "",
+      name: offchainData.name,
+      bio: offchainData.bio || "",
+      entry: offchainData.entry || "",
+      github: offchainData.github || "",
+      linkedin: offchainData.linkedin || "",
+      telegram: offchainData.telegram || "",
+      website: offchainData.website || "",
+      avatar: offchainData.avatar || "",
     },
-    projects: developer.projects || [],
-    certificates: developer.certificates || [],
+    projects: offchainData.projects || [],
+    certificates: offchainData.certificates || [],
   };
 
   const fields = [
@@ -451,6 +474,14 @@ export default function CompareWalrusModal({
     { key: "avatar", label: "Avatar" },
   ];
 
+  // Extract project comparison data for use in UI
+  const onchainProjectIds = onchainData ? new Set(onchainData.projects.map((p: any) => p.id)) : new Set();
+  const hasPendingDeletion = offchainDataFormatted.projects.some((p: any) => p.pending_deletion === true);
+  const newProjects = offchainDataFormatted.projects.filter((p: any) => 
+    !onchainProjectIds.has(p.id) && !p.pending_deletion
+  );
+  const hasNewProjects = newProjects.length > 0;
+
   // Check if there are any differences between offchain and onchain data
   const hasAnyDifference = onchainData
     ? (() => {
@@ -459,16 +490,13 @@ export default function CompareWalrusModal({
           .filter((field) => field.key !== "avatar") // Skip avatar comparison
           .map((field) => {
             const offchainValue =
-              offchainData.profile[field.key as keyof typeof offchainData.profile];
+              offchainDataFormatted.profile[field.key as keyof typeof offchainDataFormatted.profile];
             const onchainValue =
               onchainData.profile[field.key as keyof typeof onchainData.profile];
             return offchainValue !== onchainValue;
           });
         
         const hasFieldDiff = fieldDifferences.some(Boolean);
-        
-        // Check if any project has pending_deletion flag
-        const hasPendingDeletion = offchainData.projects.some((p: any) => p.pending_deletion === true);
         
         // Compare projects: check count only, ignore image format/path differences
         const hasProjectsDiff = (() => {
@@ -477,11 +505,16 @@ export default function CompareWalrusModal({
             return true;
           }
           
-          if (offchainData.projects.length !== onchainData.projects.length) {
+          // If there are new projects not yet synced, there's a difference
+          if (hasNewProjects) {
             return true;
           }
           
-          return offchainData.projects.some((offProj: any, idx: number) => {
+          if (offchainDataFormatted.projects.length !== onchainData.projects.length) {
+            return true;
+          }
+          
+          return offchainDataFormatted.projects.some((offProj: any, idx: number) => {
             const onProj = onchainData.projects[idx];
             
             // Compare basic fields
@@ -501,7 +534,7 @@ export default function CompareWalrusModal({
           });
         })();
         
-        const hasCertsDiff = JSON.stringify(offchainData.certificates) !== JSON.stringify(onchainData.certificates);
+        const hasCertsDiff = JSON.stringify(offchainDataFormatted.certificates) !== JSON.stringify(onchainData.certificates);
         
         return hasFieldDiff || hasProjectsDiff || hasCertsDiff;
       })()
@@ -703,7 +736,7 @@ export default function CompareWalrusModal({
                 <tbody>
                   {fields.map((field) => {
                     const offchainValue =
-                      offchainData.profile[field.key as keyof typeof offchainData.profile];
+                      offchainDataFormatted.profile[field.key as keyof typeof offchainDataFormatted.profile];
                     const onchainValue =
                       onchainData.profile[field.key as keyof typeof onchainData.profile];
                     const isDifferent = offchainValue !== onchainValue;
@@ -751,27 +784,79 @@ export default function CompareWalrusModal({
                   })}
 
                   {/* Projects */}
-                  <tr>
+                  <tr className={(hasPendingDeletion || hasNewProjects) ? "bg-yellow-500/10" : ""}>
                     <td className="border-b border-emerald-400/20 px-4 py-3 font-medium text-white">Projects</td>
                     <td className="border-b border-l border-emerald-400/20 px-4 py-3">
-                      <details className="text-xs">
-                        <summary className="cursor-pointer text-blue-400 hover:text-blue-300">
-                          {offchainData.projects.length} projects
-                        </summary>
-                        <pre className="mt-2 max-h-32 overflow-auto rounded bg-white/5 p-2 text-white/90">
-                          {JSON.stringify(offchainData.projects, null, 2)}
-                        </pre>
-                      </details>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-white/90">
+                            {offchainDataFormatted.projects.length} projects
+                          </span>
+                          {hasPendingDeletion && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                              {offchainDataFormatted.projects.filter((p: any) => p.pending_deletion).length} pending deletion
+                            </span>
+                          )}
+                          {hasNewProjects && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                              {newProjects.length} new
+                            </span>
+                          )}
+                        </div>
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-blue-400 hover:text-blue-300">
+                            View details
+                          </summary>
+                          <div className="mt-2 space-y-1">
+                            {offchainDataFormatted.projects.map((proj: any, idx: number) => {
+                              const isNew = !onchainProjectIds.has(proj.id) && !proj.pending_deletion;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className={`p-2 rounded text-[11px] ${
+                                    proj.pending_deletion 
+                                      ? 'bg-red-500/20 border border-red-500/30' 
+                                      : isNew
+                                        ? 'bg-blue-500/20 border border-blue-500/30'
+                                        : 'bg-white/5'
+                                  }`}
+                                >
+                                  <div className="font-medium text-white/90">{proj.name}</div>
+                                  {proj.pending_deletion && (
+                                    <div className="text-red-400 text-[10px] mt-0.5">
+                                      ⚠️ Will be removed on sync
+                                    </div>
+                                  )}
+                                  {isNew && (
+                                    <div className="text-blue-400 text-[10px] mt-0.5">
+                                      ✨ New - not yet synced
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </details>
+                      </div>
                     </td>
                     <td className="border-b border-l border-emerald-400/20 px-4 py-3">
-                      <details className="text-xs">
-                        <summary className="cursor-pointer text-blue-400 hover:text-blue-300">
+                      <div className="space-y-2">
+                        <span className="text-xs text-white/90">
                           {onchainData.projects.length} projects
-                        </summary>
-                        <pre className="mt-2 max-h-32 overflow-auto rounded bg-white/5 p-2 text-white/90">
-                          {JSON.stringify(onchainData.projects, null, 2)}
-                        </pre>
-                      </details>
+                        </span>
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-blue-400 hover:text-blue-300">
+                            View details
+                          </summary>
+                          <div className="mt-2 space-y-1">
+                            {onchainData.projects.map((proj: any, idx: number) => (
+                              <div key={idx} className="p-2 rounded bg-white/5 text-[11px]">
+                                <div className="font-medium text-white/90">{proj.name}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      </div>
                     </td>
                   </tr>
 
@@ -783,10 +868,10 @@ export default function CompareWalrusModal({
                     <td className="border-b border-l border-emerald-400/20 px-4 py-3">
                       <details className="text-xs">
                         <summary className="cursor-pointer text-blue-400 hover:text-blue-300">
-                          {offchainData.certificates.length} certificates
+                          {offchainDataFormatted.certificates.length} certificates
                         </summary>
                         <pre className="mt-2 max-h-32 overflow-auto rounded bg-white/5 p-2 text-white/90">
-                          {JSON.stringify(offchainData.certificates, null, 2)}
+                          {JSON.stringify(offchainDataFormatted.certificates, null, 2)}
                         </pre>
                       </details>
                     </td>
@@ -849,10 +934,50 @@ export default function CompareWalrusModal({
               </div>
             )}
 
-            {/* No Difference Message */}
+            {/* Sync Status Messages */}
             {!hasAnyDifference && (
               <div className="rounded-md bg-green-500/10 border border-green-500/30 p-3 text-sm text-green-400">
                 ✓ All data is synchronized! No differences found between offchain and onchain.
+              </div>
+            )}
+            
+            {hasAnyDifference && (hasPendingDeletion || hasNewProjects) && (
+              <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3 text-sm text-yellow-400">
+                <div className="flex items-start gap-2">
+                  <span className="text-base">⚠️</span>
+                  <div>
+                    <div className="font-medium">Pending Changes Detected</div>
+                    <div className="text-xs mt-1 text-yellow-300/90 space-y-1">
+                      {hasPendingDeletion && (
+                        <div>
+                          • {offchainDataFormatted.projects.filter((p: any) => p.pending_deletion).length} project(s) marked for deletion
+                        </div>
+                      )}
+                      {hasNewProjects && (
+                        <div>
+                          • {newProjects.length} new project(s) not yet synced
+                        </div>
+                      )}
+                      <div className="mt-1.5 pt-1 border-t border-yellow-500/20">
+                        Click "Sync to Walrus →" to apply changes.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {hasAnyDifference && !hasPendingDeletion && !hasNewProjects && (
+              <div className="rounded-md bg-blue-500/10 border border-blue-500/30 p-3 text-sm text-blue-400">
+                <div className="flex items-start gap-2">
+                  <span className="text-base">ℹ️</span>
+                  <div>
+                    <div className="font-medium">Data Differences Found</div>
+                    <div className="text-xs mt-1 text-blue-300/90">
+                      Your offchain and onchain data are not synchronized. Review the differences above.
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

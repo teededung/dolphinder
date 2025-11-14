@@ -96,8 +96,8 @@ function ProjectsManagerLoader({
         const json = await fetchJson<OnchainData>(blobId);
         
         // Merge onchain and database projects
-        // Priority: onchain version wins if same project ID exists
-        // BUT preserve pending_deletion flag from database
+        // Priority: onchain version is source of truth for project data
+        // BUT preserve pending_deletion flag from database (user may mark for deletion after sync)
         if (json?.projects && Array.isArray(json.projects) && json.projects.length > 0) {
           const onchainProjects = json.projects;
           const databaseProjects = initialProjects || [];
@@ -105,7 +105,9 @@ function ProjectsManagerLoader({
           // Create a map of database projects for quick lookup
           const dbProjectsMap = new Map(databaseProjects.map((p: any) => [p.id, p]));
           
-          // Merge onchain projects with database flags (like pending_deletion)
+          // Merge onchain projects with database pending_deletion flags
+          // If a project is on Walrus but has pending_deletion in database,
+          // it means user marked it for deletion AFTER last sync
           const mergedOnchainProjects = onchainProjects.map((onchainProject: any) => {
             const dbProject = dbProjectsMap.get(onchainProject.id);
             if (dbProject?.pending_deletion) {
@@ -121,10 +123,13 @@ function ProjectsManagerLoader({
           // Get all onchain project IDs
           const onchainIds = new Set(onchainProjects.map((p: any) => p.id));
           
-          // Get database projects that are NOT on onchain (i.e., not synced yet)
-          const uniqueDatabaseProjects = databaseProjects.filter((p: any) => !onchainIds.has(p.id));
+          // Get database projects that are NOT on onchain AND not marked for deletion
+          // (i.e., new projects not yet synced)
+          const uniqueDatabaseProjects = databaseProjects.filter((p: any) => 
+            !onchainIds.has(p.id) && !p.pending_deletion
+          );
           
-          // Merge: onchain projects (with preserved flags) + unique database projects
+          // Merge: onchain projects + new database projects (not yet synced)
           const mergedProjects = [...mergedOnchainProjects, ...uniqueDatabaseProjects];
           
           setProjects(mergedProjects);

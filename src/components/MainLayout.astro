@@ -9,6 +9,33 @@ export interface Props {
 const { title = "Astro" } = Astro.props;
 ---
 
+<!--
+  MainLayout.astro
+  
+  Root layout component for all pages in the application.
+  
+  Hydration Strategy:
+  - Uses client:only="react" directive for App component
+  - This prevents server-side rendering (SSR) of React components
+  - All React components hydrate client-side only
+  
+  Why client:only?
+  - Wallet state depends on browser APIs (localStorage, wallet extensions)
+  - These APIs are not available during SSR
+  - client:only ensures React tree renders only in browser
+  - Prevents hydration mismatches between server and client
+  
+  Benefits:
+  - No SSR/hydration mismatch errors
+  - Wallet state can safely access localStorage
+  - Wallet extensions can be detected properly
+  - Consistent rendering between initial load and hydration
+  
+  Trade-offs:
+  - Slightly slower initial render (no SSR HTML)
+  - But ensures wallet functionality works reliably
+  - For wallet-heavy apps, this is the right choice
+-->
 <html lang="en" transition:animate="fade">
   <head>
     <meta charset="utf-8" />
@@ -19,6 +46,12 @@ const { title = "Astro" } = Astro.props;
     <title>{title}</title>
   </head>
   <body class="dark">
+    <!-- 
+      App component with client:only="react" directive
+      - Ensures React hydration happens client-side only
+      - Prevents SSR-related issues with wallet state
+      - transition:persist maintains state during page transitions
+    -->
     <App client:only="react" transition:persist>
       <slot />
     </App>

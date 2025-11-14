@@ -4,13 +4,146 @@ import { Button } from "./Button";
 import type { DeveloperDB } from "../../types/developer";
 import { useModalStore } from "../../store/useModalStore";
 import { uploadJson } from "../../lib/walrus";
+import { uploadQuilt, blobToBase64 } from "../../lib/walrus-quilt";
 import { getDevIdByUsername } from "../../lib/sui-views";
 import { makeRegisterTx, makeUpdateProfileTx } from "../../lib/sui-tx";
 import UnbindWarningModal from "./UnbindWarningModal";
 import { WalletPopupAlert } from "./WalletPopupAlert";
+import type { ProjectImage } from "../../types/project";
 
 interface ProfileFormProps {
   developer: DeveloperDB;
+}
+
+/**
+ * Upload project images to Walrus Quilts and return projects with Walrus metadata.
+ * This function is extracted from CompareWalrusModal.handleSyncToWalrus() for reuse.
+ * 
+ * @param projects - Array of projects to process
+ * @param setSyncStep - Callback to update sync progress message
+ * @returns Projects array with updated walrusQuiltId and quiltPatchId
+ */
+async function uploadProjectImagesToWalrus(
+  projects: any[],
+  setSyncStep: (step: string) => void
+): Promise<any[]> {
+  setSyncStep("🖼️ Uploading project images to Walrus Quilts...");
+  
+  const projectsWithQuilt = await Promise.all(
+    projects.map(async (project: any) => {
+      if (!project.images || project.images.length === 0) {
+        return project;
+      }
+
+      // Prepare images for quilt upload with size tracking
+      const imagesToUpload = await Promise.all(
+        project.images.map(async (img: any, idx: number) => {
+          // If image is already a ProjectImage with quiltPatchId, skip upload
+          if (typeof img === 'object' && img.quiltPatchId) {
+            console.log(`[Quilt Skip] Image ${idx} already has quiltPatchId: ${img.quiltPatchId}`);
+            return null;
+          }
+
+          // Get image path/URL: string (old format), Supabase URL, or reconstruct from filename (new format)
+          let imgPath: string | null = null;
+          if (typeof img === 'string') {
+            imgPath = img;
+          } else if (img.filename) {
+            imgPath = `/projects/${img.filename}`;
+          }
+
+          if (!imgPath) {
+            console.warn(`[Quilt Skip] No valid image path for image ${idx}`);
+            return null;
+          }
+
+          try {
+            // Fetch image (works for both local paths and Supabase URLs)
+            const response = await fetch(imgPath);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const blob = await response.blob();
+            const base64 = await blobToBase64(blob);
+
+            // Extract format from URL/path
+            const format = imgPath.split('.').pop()?.split('?')[0] || 'jpg';
+
+            console.log(`[Quilt Prepare] Image ${idx} (${(blob.size / 1024).toFixed(2)} KB) ready for upload`);
+
+            return {
+              data: base64,
+              identifier: `${project.id}_img${idx}`,
+              size: blob.size,
+              format: format
+            };
+          } catch (err) {
+            console.error(`[Quilt Error] Failed to fetch image ${imgPath}:`, err);
+            return null;
+          }
+        })
+      );
+
+      const validImages = imagesToUpload.filter(Boolean) as { data: string; identifier: string; size: number; format: string }[];
+      if (validImages.length === 0) {
+        console.log(`[Quilt Skip] Project "${project.name}": No images to upload`);
+        return project;
+      }
+
+      try {
+        // Upload to quilt
+        console.log(`[Quilt Upload] Project "${project.name}": Uploading ${validImages.length} images...`);
+        const quiltResult = await uploadQuilt(validImages);
+
+        console.log(`[Quilt Success] Project "${project.name}": ${validImages.length} images uploaded to quilt ${quiltResult.quiltId}`);
+
+        // Update project with quilt IDs
+        return {
+          ...project,
+          walrusQuiltId: quiltResult.quiltId,
+          images: project.images.map((img: any, idx: number) => {
+            // If image already has quiltPatchId, keep it
+            if (typeof img === 'object' && img.quiltPatchId) {
+              return img;
+            }
+
+            // Find corresponding patch result
+            const patchResult = quiltResult.patches.find(p => p.identifier === `${project.id}_img${idx}`);
+            const imageData = validImages.find(v => v.identifier === `${project.id}_img${idx}`);
+            
+            // Get original image path
+            const imgPath = typeof img === 'string' ? img : (img.filename ? `/projects/${img.filename}` : null);
+            
+            // Extract filename from path or URL
+            let filename: string | undefined = undefined;
+            if (imgPath) {
+              // For URLs: extract filename from last segment
+              // For local paths: extract filename after last /
+              const segments = imgPath.split('/');
+              filename = segments[segments.length - 1].split('?')[0]; // Remove query params
+            }
+            
+            return {
+              filename: filename,
+              quiltPatchId: patchResult?.patchId || undefined,
+              metadata: {
+                size: imageData?.size || 0,
+                format: imageData?.format || 'jpg',
+                index: idx
+              }
+            } as ProjectImage;
+          })
+        };
+      } catch (err) {
+        console.error(`[Quilt Error] Failed to upload quilt for project "${project.name}":`, err);
+        // Keep original project if quilt upload fails
+        return project;
+      }
+    })
+  );
+
+  return projectsWithQuilt;
 }
 
 export default function ProfileForm({ developer }: ProfileFormProps) {
@@ -192,6 +325,12 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         avatarBase64 = developer.avatar || "";
       }
       
+      // Step 1.5: Upload project images to Walrus Quilts
+      const projectsWithQuilt = await uploadProjectImagesToWalrus(
+        developer.projects || [],
+        setWalrusStep
+      );
+      
       const profileData = {
         profile: {
           name: formData.get("name") as string,
@@ -203,7 +342,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
           website: (formData.get("website") as string) || "",
           avatar: avatarBase64, // Always base64 or URL for Walrus blob
         },
-        projects: developer.projects || [],
+        projects: projectsWithQuilt, // Use projects with Walrus metadata
         certificates: developer.certificates || [],
       };
 
@@ -259,7 +398,7 @@ export default function ProfileForm({ developer }: ProfileFormProps) {
         telegram: (formData.get("telegram") as string) || "",
         website: (formData.get("website") as string) || "",
         avatar: developer.avatar || "", // Keep existing avatar path
-        projects: developer.projects || [],
+        projects: projectsWithQuilt, // Use projects with Walrus metadata
         certificates: developer.certificates || [],
       };
       

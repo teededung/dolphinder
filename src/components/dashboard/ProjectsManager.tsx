@@ -503,8 +503,8 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     return true;
   };
 
-  // Save project (add or update)
-  const handleSave = () => {
+  // Save project (add or update) with auto-save to server
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
@@ -538,12 +538,32 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
       updatedProjects = [...projects, newProject];
     }
 
-    setProjects(updatedProjects);
-    onProjectsChange?.(updatedProjects);
-    cancelForm();
-    setLoading(false);
-    setSuccess(editingId ? 'Project updated successfully!' : 'Project added successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+    try {
+      // Save to server first (no optimistic update)
+      const response = await fetch('/api/profile/update-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updatedProjects }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save project');
+      }
+
+      // Success: update state, close form and show success message
+      setProjects(updatedProjects);
+      onProjectsChange?.(updatedProjects);
+      cancelForm();
+      setSuccess(editingId ? 'Project updated successfully!' : 'Project added successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Error saving project:', err);
+      setError(err.message || 'Failed to save project. Please check your connection and try again.');
+      setLoading(false);
+    }
   };
 
   // Open delete confirmation dialog
@@ -664,37 +684,7 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
     }
   };
 
-  // Save to server
-  const handleSaveToServer = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
 
-    try {
-      const response = await fetch('/api/profile/update-projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save projects');
-      }
-
-      setSuccess('Projects saved successfully!');
-      // Reload page after 1.5 seconds to sync with ProfileForm
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (err: any) {
-      console.error('Error saving projects:', err);
-      setError(err.message || 'Failed to save projects');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -1123,19 +1113,6 @@ export default function ProjectsManager({ initialProjects = [], onProjectsChange
             <p>No projects yet. Click "Add Project" to get started!</p>
           </div>
         )
-      )}
-
-      {/* Save Button */}
-      {projects.length > 0 && !showForm && (
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSaveToServer}
-            disabled={loading}
-            className="gap-2"
-          >
-            {loading ? 'Saving...' : 'Save Projects'}
-          </Button>
-        </div>
       )}
 
       {/* Delete Confirmation Dialog */}

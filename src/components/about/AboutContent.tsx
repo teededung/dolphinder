@@ -41,6 +41,14 @@ export default function AboutContent() {
         {/* Community Section */}
         <section className="mb-20">
           <div className="mb-8 text-center">
+            <div className="mb-6 flex justify-center">
+              <img
+                src="/sui-logo.svg"
+                alt="Sui Logo"
+                className="h-16 w-auto md:h-20"
+                loading="eager"
+              />
+            </div>
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
               Sui Developer Community
             </h2>
